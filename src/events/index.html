@@ -1,0 +1,27 @@
+<!--page title="Events | Ilẹ̀ Abínibí Atlas" desc="Upcoming and past events from Abínibí communities, shared by members and reviewed by editors." nav="events"-->
+<!doctype html>
+<html lang="en">
+<head>
+<!--include:head-->
+</head>
+<body>
+<!--include:header-->
+<main id="main">
+  <div class="wrap">
+    <div class="page-head">
+      <p class="breadcrumb"><a href="/">Home</a> / Events</p>
+      <div class="section-head"><h1>Events</h1><a class="btn btn-gold" href="/contribute/?type=event">Share an event</a></div>
+      <p class="lede" style="font-size:var(--step-1);color:var(--ink-soft)">Events shared by members from their own communities. Every event is checked by an editor before it appears here.</p>
+    </div>
+    <div class="bar">
+      <div class="chips" role="group" aria-label="When" id="when"></div>
+      <div class="fld" style="margin:0;flex:1;min-width:220px"><label class="visually-hidden" for="eq">Search events</label><input id="eq" type="search" placeholder="Search by name, place or region"></div>
+    </div>
+    <div class="stack" id="ev-list" aria-live="polite"><div class="loading"><span class="spinner"></span> Loading events…</div></div>
+    <p class="muted small" style="margin-top:var(--space-5)">Looking for dates on the calendar? See the <a href="/calendar/">Abínibí calendar</a>.</p>
+  </div>
+</main>
+<!--include:footer-->
+<script type="module" src="/js/events-page.js"></script>
+</body>
+</html>

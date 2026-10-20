@@ -1,0 +1,287 @@
+# Ilẹ̀ Abínibí Atlas: go live at atlas.ileabinibi.com (no terminal on your computer)
+
+Everything below is done in a web browser: GitHub, Supabase, Netlify and your domain's DNS page. The only command-line step is one optional command for push notifications, and it runs in **GitHub Codespaces**, a terminal that opens inside your browser. Tick each box as you go.
+
+---
+
+## Part A. How it fits together
+
+| Piece | Job | Where |
+|---|---|---|
+| Website files | Everything visitors see | **GitHub** (stores them) and **Netlify** (builds and hosts them) |
+| Database, logins, uploads, live chat | Members, posts, events, discussion room | **Supabase** |
+| Push sender | Sends push notifications | A small function that Netlify runs for you |
+| Your address | `atlas.ileabinibi.com` | One DNS record at your domain host |
+
+You do not rent or manage a server. Your WordPress site at ileabinibi.com is not touched.
+
+**Order of work:** GitHub, then Supabase, then sign-in settings, then Netlify, then your domain, then admin, then optional push.
+
+**Costs:** every service has a free tier that is enough to start. Free tiers have limits, so check each pricing page before announcing the site.
+
+## Part B. What you need before starting
+
+- [ ] A **GitHub** account (github.com)
+- [ ] A **Supabase** account (supabase.com)
+- [ ] A **Netlify** account (netlify.com). Use "Sign up with GitHub" to make step G easier
+- [ ] Login to wherever the DNS for **ileabinibi.com** is managed (your registrar, your web host's cPanel, or Cloudflare)
+- [ ] The file `ile-abinibi-atlas.zip` on your computer or phone-with-computer-mode. **Unzip it** (right-click, Extract all). You will see folders `src`, `supabase`, `netlify`, `scripts`, `docs`, `tests` and files `netlify.toml`, `package.json`, `README.md`
+- [ ] A password manager or a safe note for the keys you will create
+
+---
+
+## Part C. Put the files on GitHub (browser only)
+
+1. Go to github.com, click **+** (top right) > **New repository**.
+2. Name it `ile-abinibi-atlas`, choose **Private**, leave "Add a README" **off**, click **Create repository**.
+3. On the empty repository page click **uploading an existing file**.
+4. Open your unzipped folder. **Select everything inside it** (the folders and files, not the zip, and not the outer folder itself) and **drag them into the GitHub page**. There are 69 files, which is within GitHub's 100-file limit for one upload.
+5. Wait until every file shows in the list. Scroll down, leave the message as is, click **Commit changes**.
+6. Check the repository now shows `src`, `supabase`, `netlify`, `scripts`, `docs`, `tests`, `netlify.toml`, `package.json`. Open `src` and confirm you see folders like `css`, `js`, `map`, `account`.
+7. Hidden files (names starting with a dot, such as `.gitignore` and `.env.example`) may not upload. That does not stop the site working. Optional: **Add file > Create new file**, name it `.gitignore`, paste this, and commit: `node_modules/` then `dist/` then `.env` (one per line).
+
+If a folder is missing, click **Add file > Upload files** and drag just that folder.
+
+---
+
+## Part D. Create the Supabase project and database
+
+1. supabase.com > **New project**. Name `ile-abinibi-atlas`. Pick the region nearest most of your users. Create a strong database password and save it. Click create and wait until it finishes.
+
+### D1. Run the database files, in order
+
+Use **Supabase > SQL Editor > New query** for every file. For each file below: in GitHub open `supabase` > `migrations` > the file, click the **Copy raw file** icon (two squares, top right), paste into a new Supabase query, press **Run**, and wait for "Success" before the next one. Do not paste the page text itself, and do not run two files in the same query tab.
+
+1. `0001_core_schema.sql`
+2. `0002_security.sql`
+3. `0003_admin.sql`
+4. `0004_features.sql`
+5. `0005_storage.sql`
+6. `0006_selfcheck.sql` (run this last; it changes nothing and shows OK or MISSING for each part)
+
+**If a file fails**
+1. Do not run the later files. Scroll the result panel and copy the **red error message in full** (it names the line). Send it to me; one error message is all I need.
+2. A failed file changes nothing, because each file runs as one unit. To retry the same file, just run it again.
+3. **Starting over** (only on a brand-new project with no data you care about): run `0000_reset.sql` first. It deletes everything the Atlas files created (it does not delete user accounts), then run files 1 to 5 again.
+4. Common causes: running files out of order, running a file twice (messages like "already exists"), or pasting a partly copied file. Always use **Copy raw file** and paste the whole thing.
+
+### D2. Check it worked
+
+Run `0006_selfcheck.sql`. Every row must say **OK**:
+
+| Check | Meaning |
+|---|---|
+| Tables created (29) | The database tables exist |
+| Tables with security OFF (0) | Every table is protected |
+| Public views (11) | Public pages can read published content |
+| Key functions (8) | Approval, admin and search functions exist |
+| Sign-up trigger / Admin trigger | New accounts get a profile; your admin email is recognised |
+| Storage buckets (3), Private bucket is private | Upload areas exist; private uploads are not public |
+| Storage access rules (10) | Who may upload or read files |
+| Live chat switched on | The discussion room updates instantly |
+
+**If a check says MISSING**, fix only that item:
+- **Sign-up trigger or Admin trigger missing:** Supabase did not allow the SQL to attach to the user table. Contact me with the warning text; meanwhile the manual admin SQL in Part I still works, but new sign-ups will not get a profile row until this is fixed.
+- **Storage buckets missing:** Dashboard > **Storage > New bucket**. Create `public-media` (public), `avatars` (public), `private-submissions` (**not** public).
+- **Storage access rules missing (fewer than 10):** Dashboard > **Storage > Policies**, or send me the warning and I will give the exact rules to paste in the policy editor. Without them, uploads (pictures and attachments) will be refused, but everything else works.
+- **Live chat switched on missing:** Dashboard > **Database > Publications > supabase_realtime**, switch on the table `chat_messages`.
+
+### D3. Copy your keys
+Supabase > **Project Settings > API** (may be named "API Keys"). Copy into your password manager:
+- **Project URL** (like `https://abcd1234.supabase.co`)
+- **anon / publishable key** (safe to put in the website)
+- **service_role / secret key** (**secret**: only ever pasted into Netlify in Part G)
+
+---
+
+## Part E. Sign-in settings in Supabase (uses your subdomain)
+
+1. **Authentication > URL Configuration**
+   - **Site URL:** `https://atlas.ileabinibi.com`
+   - **Redirect URLs:** click Add and enter `https://atlas.ileabinibi.com/**`. You will add your Netlify address here too in Part G.
+   If these are wrong, confirmation and password-reset links fail.
+2. **Authentication > Providers > Email:** keep **Confirm email ON**. Set minimum password length to **10**.
+3. **Email sending.** Supabase's built-in sender is for testing and allows very few emails per hour. Before inviting members, open **Authentication > Emails** (or **SMTP settings**, the name varies) and connect your own sender:
+   - Create an account with an email provider such as Resend, Brevo or Postmark and add your domain `ileabinibi.com`.
+   - They show DNS records (SPF, DKIM). Add them at your DNS host. These are extra records and do not affect your website.
+   - Paste their SMTP host, port, username and password into Supabase and set the sender to something like `no-reply@ileabinibi.com`.
+
+---
+
+## Part F. Connect the website to Supabase (edit in GitHub)
+
+1. In GitHub open `src` > `js` > `config.js` and click the **pencil** icon (Edit).
+2. Replace the empty quotes so it reads:
+```js
+export const config = {
+  siteUrl: 'https://atlas.ileabinibi.com',
+  supabaseUrl: 'https://YOUR-PROJECT.supabase.co',
+  supabaseAnonKey: 'YOUR-ANON-OR-PUBLISHABLE-KEY',
+  vapidPublicKey: ''
+};
+```
+(Keep any lines already in the file; only fill the values.) 3. Click **Commit changes**.
+
+> After this, demonstration places and sample posts disappear. The site shows only what you publish.
+
+---
+
+## Part G. Deploy on Netlify
+
+1. Netlify > **Add new site > Import an existing project > GitHub** and authorise it for your repository. Pick `ile-abinibi-atlas`.
+2. Leave the build settings alone (they come from `netlify.toml`).
+3. Open **Site configuration > Environment variables** and add these (mark the keys as secret/sensitive when offered):
+
+| Name | Value |
+|---|---|
+| `SUPABASE_URL` | your Project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | the **secret** key |
+| `VAPID_SUBJECT` | `mailto:cypherilerioluwa@gmail.com` |
+| `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` | add later, in Part J |
+
+4. Click **Deploy**. Wait for "Published". Open the `something.netlify.app` link and check the home page and menu load.
+5. Check **Functions**: the list should show `send-push`.
+6. Add the Netlify address to Supabase: **Authentication > URL Configuration > Redirect URLs**, add `https://something.netlify.app/**`.
+7. Optional: **Site configuration > Change site name** to something tidy.
+
+If the build fails, open the failed deploy and read the log. Send me the last 30 lines.
+
+---
+
+## Part H. Point atlas.ileabinibi.com at the site
+
+You already created the `atlas` subdomain. Creating one at a web host (for example in cPanel) usually also creates a DNS record pointing at the old hosting. That record has to be replaced, because one name cannot have both an A record and a CNAME.
+
+1. Netlify > **Domain management > Add a domain** > enter `atlas.ileabinibi.com` > confirm. Netlify shows the **exact DNS value** to use (normally your `*.netlify.app` address). Keep this page open.
+2. Open the **DNS settings** of ileabinibi.com (cPanel: **Zone Editor**, Namecheap: **Advanced DNS**, GoDaddy: **DNS**, Cloudflare: **DNS**).
+3. Find existing records whose name is `atlas` (or `atlas.ileabinibi.com`). **Delete** any A, AAAA or CNAME record for `atlas`. Do not touch any other record, and do not touch the records for `www`, the main domain, or email.
+4. **Add one record:**
+   - **Type:** CNAME
+   - **Name / Host:** `atlas`
+   - **Value / Target:** exactly what Netlify showed (no `https://`, no slash)
+   - **TTL:** automatic or 300
+5. Use **DNS pointing**, not "URL redirect" or "domain forwarding" at your host. Forwarding breaks HTTPS and sign-in.
+6. On **Cloudflare**, set the record to **DNS only** (grey cloud) at first.
+7. If your host keeps an `atlas` folder or WordPress subdomain site, you can leave it unused or remove it afterwards. Your main WordPress site is unaffected.
+8. Wait a few minutes to a few hours. Check at dnschecker.org by entering `atlas.ileabinibi.com` with type CNAME.
+9. Back in Netlify > Domain management, wait for **HTTPS** to show a certificate (automatic). Turn on **Force HTTPS** if offered.
+10. Open **https://atlas.ileabinibi.com/**. You should see the padlock and the Atlas.
+11. Confirm Part E still lists `https://atlas.ileabinibi.com/**` and the Site URL.
+
+---
+
+## Part I. Make yourself administrator
+
+1. Open `https://atlas.ileabinibi.com/account/` > **Sign up** with **cypherilerioluwa@gmail.com** and a strong password.
+2. Open the confirmation email and click the link. Admin is granted only after the email is confirmed, so nobody else can claim it.
+3. **Sign in.** You land on your dashboard automatically, and the top menu changes from "Sign in / Sign up" to **Dashboard**. The sidebar shows **Admin**. When you log out you return to the Sign in / Sign up page.
+4. If it does not, in Supabase **SQL Editor** run this once, then sign out and in:
+```sql
+insert into user_roles(user_id, role)
+select id, 'admin' from auth.users
+where lower(email) = 'cypherilerioluwa@gmail.com' and email_confirmed_at is not null
+on conflict do nothing;
+```
+
+**Giving others rights:** Admin > **Users** > **Roles** next to the person > choose a role > **Grant**. They must have an account first.
+
+| Role | Can do |
+|---|---|
+| member | Sign in, contribute, see own posts and notifications, join chat |
+| community_editor, research_editor | Review submissions, edit and publish content, handle corrections |
+| admin | Everything, including users, messages, push and the audit trail |
+
+**Ban** stops posting and chat. **Delete** erases an account. The last admin cannot be demoted or deleted.
+
+---
+
+## Part J. Push notifications (optional; everything else works without it)
+
+You need two keys. Generate them in a browser terminal:
+
+1. In GitHub open your repository > green **Code** button > **Codespaces** tab > **Create codespace on main**. A code editor opens in your browser. Wait for the terminal panel at the bottom.
+2. In that terminal type `npx web-push generate-vapid-keys` and press Enter. Copy the **public** and **private** keys into your password manager.
+3. **Delete the codespace** afterwards (github.com/codespaces > the three dots > Delete) so it does not use your free hours.
+4. Edit `src/js/config.js` in GitHub (as in Part F) and put the public key in `vapidPublicKey`. Commit.
+5. In Netlify > Environment variables add `VAPID_PUBLIC_KEY` (public) and `VAPID_PRIVATE_KEY` (private, secret). Then **Deploys > Trigger deploy > Deploy site**.
+6. Test: sign in > **Settings > Push notifications > Turn on** and allow the browser prompt. Then **Admin > Push notifications** and send yourself one.
+
+Limits: on iPhone and iPad push only works after the app is added to the home screen (iOS 16.4 or later). The admin screen reports how many deliveries the push service accepted, not how many people read them.
+
+---
+
+## Part K. Add real content
+
+The Atlas starts empty on purpose; nothing is invented.
+
+1. **Admin > Communities > New:** preferred name with tone marks, country, coordinates, short summary, evidence label, then **Publish**. Tick "hide coordinates" for sensitive places. The Map and city pages update at once.
+2. Members contribute at **/contribute/**. You review in **Admin > Submissions**. **Approve and publish** puts an article on its city page or an event on the Events page and notifies the author. Request changes and Reject need written feedback.
+3. Add proverbs and quiz questions in Admin and mark them Published.
+4. Send a welcome notice: **Admin > Messages**.
+
+---
+
+## Part L. Test before announcing
+
+Use three accounts: you (admin), a second email as a **member**, a third as an **editor** (grant the role). Use a private/incognito window for the extra accounts.
+
+- [ ] A member can submit an article, a correction and an event, and cannot submit without a city or region.
+- [ ] Their post shows as Pending, then updates after your decision, with a notification.
+- [ ] A member does **not** see the Admin tab.
+- [ ] An unapproved submission is not visible publicly. After approval it appears on the right page.
+- [ ] Ban a test member: they can no longer chat or submit.
+- [ ] Promote and demote works. Demoting the only admin is refused.
+- [ ] A message to "Everyone" arrives in test members' Notifications.
+- [ ] Sign-up email and forgot-password email arrive and their links work.
+- [ ] Deleting a test member's account works.
+- [ ] Two browsers on the Community page see each other's chat messages immediately.
+- [ ] Push test arrives on a device with push turned on.
+- [ ] Light theme is the default; Settings can switch to Dark.
+- [ ] Install the app on Android Chrome and on desktop; the offline page appears when offline.
+- [ ] Layout holds on phone, tablet and desktop.
+
+---
+
+## Part M. Tell search engines
+
+1. search.google.com/search-console > **Add property** > `https://atlas.ileabinibi.com` > verify (the DNS option is easiest; it adds a TXT record).
+2. **Sitemaps** > submit `https://atlas.ileabinibi.com/sitemap.xml`.
+3. Note: community city pages load by script and are marked noindex for now. Indexable pages per community are not built yet.
+
+---
+
+## Part N. Day-to-day running
+
+- **Edit the site:** open a file in GitHub, click the pencil, change it, **Commit changes**. Netlify rebuilds in about a minute. To preview first, commit to a new branch and Netlify makes a deploy preview.
+- **Undo a bad change:** Netlify > **Deploys** > an older good deploy > **Publish deploy**.
+- **Database changes:** never change tables by hand only. Add a new numbered file in `supabase/migrations/` (for example `0005_name.sql`), run it in SQL Editor, and commit it to GitHub.
+- **Backups:** Supabase paid plans include daily backups. On the free plan nothing is kept for you, so use **Table Editor** to export key tables as CSV on a schedule, download uploaded files from **Storage**, or upgrade the plan once you have real members.
+- **Watching limits:** each month check Supabase (database size, storage, bandwidth, auth emails) and Netlify (bandwidth, functions). The free OpenStreetMap tiles are for light use only.
+- **Moderation:** chat is public. Check it, delete bad messages, ban repeat offenders.
+- **If a secret leaks:** reset the Supabase secret key and update Netlify; for push, regenerate the keys (Part J) and redeploy.
+- **Legal:** the footer no longer links to a privacy policy or terms. Publish them somewhere reachable, and state what you store (email, name, submissions, uploads, push subscription).
+
+---
+
+## Part O. Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| Netlify build says secrets were found | `netlify.toml` already lists the public keys to ignore. Make sure you did not paste the **secret** key into `config.js` |
+| Confirmation or reset link errors | Fix Site URL and Redirect URLs in Supabase (Part E) |
+| A SQL file fails | Copy the full red error and send it to me; see Part D1 "If a file fails" |
+| No Admin tab | Email not confirmed, or run the SQL in Part I step 4, then sign in again |
+| Sign-up email never arrives | Set up your own email sender (Part E step 3); check spam |
+| Domain stuck on "pending" or shows another site | The old `atlas` A/AAAA record still exists, or the CNAME value is wrong; redo Part H steps 3 and 4 |
+| Browser warns about the certificate | Wait for Netlify's HTTPS to finish; on Cloudflare use DNS only |
+| Map shows no communities | None published yet (Admin > Communities) |
+| Chat does not update live | Run `0006_selfcheck.sql`; fix the "Live chat" row; both people must be signed in |
+| Push says "not configured" | `vapidPublicKey` missing in `config.js`, Netlify variables missing, or not redeployed |
+| Push works on Android but not iPhone | iPhone needs the app added to the home screen (iOS 16.4+) |
+| Old content after an update | Reload once, or Settings > Check for updates |
+
+---
+
+## Part P. Not built yet
+
+The Kọ́jọ́dá calendar (needs your original calendar source), indexable pages per community and article, duplicate-record merging, a media review gallery, email notifications, event reminders, a change-email flow, and the privacy/terms pages.

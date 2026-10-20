@@ -1,0 +1,46 @@
+/* Design tokens. Brand colours are PROVISIONAL: sampled from the supplied logo JPEGs
+   (cream, sun gold, hill brown, deep brown). Replace with exact values from the
+   ileabinibi.com theme stylesheet once confirmed. Change them here only. */
+:root{
+  --brand-cream:#FCF4E4;
+  --brand-gold:#DCA43C;
+  --brand-brown:#5C3C1C;
+  --brand-earth:#3C2414;
+
+  --bg:var(--brand-cream);
+  --surface:#FFFBF2;
+  --surface-sunk:#F5E9D0;
+  --ink:var(--brand-earth);
+  --ink-soft:#6A5039;
+  --line:#E3D2B0;
+  --accent:var(--brand-gold);
+  --accent-ink:#7A4E07;          /* gold dark enough for text on cream (>=5:1) */
+  --link:#7A4E07;
+  --on-dark:#FCF4E4;
+  --btn-bg:var(--brand-earth);--btn-bg-hover:var(--brand-brown);--btn-ink:#FCF4E4;
+  --danger:#9B2C1C;
+  --ok:#2F5D3A;
+
+  --font-display:"Fraunces","Iowan Old Style",Georgia,"Times New Roman",serif;
+  --font-body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+
+  --step--1:clamp(.84rem,.82rem + .1vw,.9rem);
+  --step-0:clamp(1rem,.97rem + .15vw,1.0625rem);
+  --step-1:clamp(1.2rem,1.1rem + .5vw,1.4rem);
+  --step-2:clamp(1.5rem,1.3rem + 1vw,2rem);
+  --step-3:clamp(2rem,1.5rem + 2.4vw,3.2rem);
+  --step-4:clamp(2.6rem,1.7rem + 4.4vw,4.8rem);
+
+  --space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;--space-5:1.5rem;
+  --space-6:2.25rem;--space-7:3.5rem;--space-8:5.5rem;
+  --radius-s:6px;--radius-m:12px;--radius-l:22px;
+  --measure:68ch;
+  --wrap:1180px;
+  --ease:cubic-bezier(.2,.7,.2,1);
+}
+
+/* Dark theme (opt-in from Settings). The default is always the light theme. */
+:root[data-theme=dark]{
+  --bg:#1A110A;--surface:#251910;--surface-sunk:#2F2016;--ink:#F5E9D0;--ink-soft:#C8B290;--line:#4A3626;
+  --accent-ink:#EDBD62;--link:#EDBD62;--danger:#F0836F;--ok:#8CC59A;
+  --btn-bg:var(--brand-gold);--btn-bg-hover:#E8B455;--btn-ink:#3C2414;color-scheme:dark}

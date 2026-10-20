@@ -1,0 +1,29 @@
+<!--page title="Community hub: discussion, quiz and proverbs | Ilẹ̀ Abínibí Atlas" desc="Join the discussion room, test your knowledge with quizzes, read proverbs and see the latest updates from Abínibí communities." nav="community"-->
+<!doctype html>
+<html lang="en">
+<head>
+<!--include:head-->
+</head>
+<body>
+<!--include:header-->
+<main id="main">
+  <div class="wrap">
+    <div class="page-head">
+      <p class="breadcrumb"><a href="/">Home</a> / Community</p>
+      <h1>Community</h1>
+      <p class="lede" style="font-size:var(--step-1);color:var(--ink-soft)">Talk with people from every community, play, and keep up with what is happening.</p>
+    </div>
+    <div class="hub-tabs" role="tablist" aria-label="Community sections" id="hubtabs">
+      <button class="chip" role="tab" data-tab="discuss" aria-pressed="true">Discussion room</button>
+      <button class="chip" role="tab" data-tab="quiz" aria-pressed="false">Quiz</button>
+      <button class="chip" role="tab" data-tab="guess" aria-pressed="false">Guess the community</button>
+      <button class="chip" role="tab" data-tab="proverbs" aria-pressed="false">Proverbs</button>
+      <button class="chip" role="tab" data-tab="updates" aria-pressed="false">Latest updates</button>
+    </div>
+    <div id="hub-panel" class="panel"><div class="loading"><span class="spinner"></span> Loading…</div></div>
+  </div>
+</main>
+<!--include:footer-->
+<script type="module" src="/js/community-page.js"></script>
+</body>
+</html>

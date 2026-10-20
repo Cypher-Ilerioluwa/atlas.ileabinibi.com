@@ -1,0 +1,39 @@
+<!--page title="Abínibí and Gregorian calendar | Ilẹ̀ Abínibí Atlas" desc="A Gregorian calendar with the Kọ́jọ́dá view for Ilẹ̀ Abínibí Atlas. Kọ́jọ́dá dates are shown only once checked against the original calendar." nav="calendar"-->
+<!doctype html>
+<html lang="en">
+<head>
+<!--include:head-->
+</head>
+<body>
+<!--include:header-->
+<main id="main">
+  <div class="wrap">
+    <div class="page-head">
+      <p class="breadcrumb"><a href="/">Home</a> / Calendar</p>
+      <h1>Abínibí calendar</h1>
+    </div>
+    <div class="tabs" role="group" aria-label="Calendar system">
+      <button class="chip" type="button" data-system="gregorian" aria-pressed="true">Gregorian</button>
+      <button class="chip" type="button" data-system="kojoda" aria-pressed="false">Kọ́jọ́dá</button>
+    </div>
+    <div id="kojoda-status" class="notice" hidden></div>
+    <section id="gregorian" aria-label="Gregorian calendar">
+      <div class="cal-bar">
+        <h2 id="cal-title" aria-live="polite"></h2>
+        <button class="btn btn-ghost" type="button" id="prev" aria-label="Previous month">‹</button>
+        <button class="btn btn-ghost" type="button" id="today">Today</button>
+        <button class="btn btn-ghost" type="button" id="next" aria-label="Next month">›</button>
+      </div>
+      <div class="cal-grid" id="cal-grid" role="grid" aria-labelledby="cal-title"></div>
+      <p class="card" id="cal-selected" style="margin-top:var(--space-4)" aria-live="polite"></p>
+    </section>
+    <section id="kojoda" aria-label="Kọ́jọ́dá calendar" hidden>
+      <div class="card"><h2 style="font-size:var(--step-2)">Kọ́jọ́dá view</h2><p id="kojoda-body"></p></div>
+    </section>
+    <p class="muted small" style="margin-top:var(--space-5)">Festival and observance dates are not shown yet. They will appear only from reviewed event records.</p>
+  </div>
+</main>
+<!--include:footer-->
+<script type="module" src="/js/calendar-page.js"></script>
+</body>
+</html>

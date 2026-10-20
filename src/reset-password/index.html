@@ -1,0 +1,25 @@
+<!--page title="Reset password | Ilẹ̀ Abínibí Atlas" desc="Choose a new password for your Ilẹ̀ Abínibí Atlas account." noindex-->
+<!doctype html>
+<html lang="en">
+<head>
+<!--include:head-->
+</head>
+<body>
+<!--include:header-->
+<main id="main">
+  <div class="wrap" style="max-width:520px">
+    <div class="page-head"><h1>Choose a new password</h1></div>
+    <p id="state" class="notice">Checking your reset link…</p>
+    <form id="form" class="card" hidden novalidate>
+      <div class="fld"><label for="pw">New password</label><input id="pw" type="password" minlength="10" required autocomplete="new-password"><p class="small muted">At least 10 characters.</p></div>
+      <div class="fld"><label for="pw2">Repeat new password</label><input id="pw2" type="password" required autocomplete="new-password"></div>
+      <p id="msg" role="status" aria-live="polite" class="small"></p>
+      <button class="btn" type="submit">Save new password</button>
+    </form>
+  </div>
+</main>
+<!--include:footer-->
+<link rel="stylesheet" href="/css/admin.css">
+<script type="module" src="/js/reset-page.js"></script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!--page title="Map of Abínibí communities | Ilẹ̀ Abínibí Atlas" desc="Find Abínibí communities on an interactive map, read their history and key information, and open each community page for posts." nav="map"-->
+<!doctype html>
+<html lang="en">
+<head>
+<!--include:head-->
+<!--include:leaflet-->
+</head>
+<body>
+<!--include:header-->
+<main id="main">
+  <div class="wrap">
+    <div class="page-head">
+      <p class="breadcrumb"><a href="/">Home</a> / Map</p>
+      <h1>Community map</h1>
+      <p class="lede" style="font-size:var(--step-1);color:var(--ink-soft)">Choose a community to see where it is, a short history and key information. Then open the community page for every post about it.</p>
+      <p class="notice" id="demo-note" hidden><strong>Demonstration data.</strong> These places come from the first prototype and have not been editorially reviewed. Points are approximate city centres, not boundaries.</p>
+    </div>
+    <div class="atlas-tools">
+      <form role="search" onsubmit="return false">
+        <label for="q">Search communities</label>
+        <input id="q" type="search" autocomplete="off" placeholder="For example: Ife, Oyo, Bahia">
+      </form>
+      <div class="chips" role="group" aria-label="Region" id="regions"></div>
+      <p class="small muted" id="count" aria-live="polite"></p>
+    </div>
+    <div class="atlas-layout">
+      <div id="map" role="region" aria-label="Interactive map of Abínibí communities"><noscript><p class="map-fallback">The map needs JavaScript. The community list below needs it too.</p></noscript></div>
+      <aside class="detail" id="detail" aria-live="polite"></aside>
+    </div>
+    <h2 style="margin-top:var(--space-6);font-size:var(--step-2)">Communities</h2>
+    <div class="loading" id="listload"><span class="spinner"></span> Loading communities…</div>
+    <ul class="place-list" id="list"></ul>
+  </div>
+</main>
+<!--include:footer-->
+<script type="module" src="/js/map-page.js"></script>
+</body>
+</html>
