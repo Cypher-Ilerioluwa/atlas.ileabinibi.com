@@ -197,29 +197,60 @@ on conflict do nothing;
 
 ## Part J. Push notifications (optional; everything else works without it)
 
-You need two keys. Generate them in a browser terminal:
+You need two keys: a **public** one (goes in the website) and a **private** one (goes only in Netlify).
 
-1. In GitHub open your repository > green **Code** button > **Codespaces** tab > **Create codespace on main**. A code editor opens in your browser. Wait for the terminal panel at the bottom.
-2. In that terminal type `npx web-push generate-vapid-keys` and press Enter. Copy the **public** and **private** keys into your password manager.
-3. **Delete the codespace** afterwards (github.com/codespaces > the three dots > Delete) so it does not use your free hours.
-4. Edit `src/js/config.js` in GitHub (as in Part F) and put the public key in `vapidPublicKey`. Commit.
-5. In Netlify > Environment variables add `VAPID_PUBLIC_KEY` (public) and `VAPID_PRIVATE_KEY` (private, secret). Then **Deploys > Trigger deploy > Deploy site**.
-6. Test: sign in > **Settings > Push notifications > Turn on** and allow the browser prompt. Then **Admin > Push notifications** and send yourself one.
+**Easiest way, in your browser's F12 console (nothing is installed or uploaded):**
+1. Open your own site (`https://atlas.ileabinibi.com`, or your `*.netlify.app` address) in Chrome, Edge or Firefox. It must be an https page.
+2. Press **F12**, open the **Console** tab. If the browser asks, type `allow pasting` and press Enter.
+3. Paste this and press Enter:
+```js
+(async () => {
+  const b64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const kp = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+  const pub = await crypto.subtle.exportKey('raw', kp.publicKey);
+  const jwk = await crypto.subtle.exportKey('jwk', kp.privateKey);
+  console.log('VAPID_PUBLIC_KEY  = ' + b64u(pub));
+  console.log('VAPID_PRIVATE_KEY = ' + jwk.d);
+  console.log('lengths (expect 87 and 43):', b64u(pub).length, jwk.d.length);
+})();
+```
+4. Copy both lines into your password manager. Generate **once** only: a new pair would cut off everyone who already turned push on. Never paste the private key into GitHub, a chat, or `config.js`.
+
+*Alternative with a terminal:* GitHub > your repo > **Code > Codespaces > Create codespace**, then run `npx web-push generate-vapid-keys`, and delete the codespace afterwards.
+
+**Then:**
+1. Edit `src/js/config.js` in GitHub (as in Part F) and put the **public** key in `vapidPublicKey`. Commit.
+2. In Netlify > Environment variables add `VAPID_PUBLIC_KEY` (public) and `VAPID_PRIVATE_KEY` (private, secret). Then **Deploys > Trigger deploy > Deploy site**.
+3. Test: sign in > **Settings > Push notifications > Turn on** and allow the browser prompt. Then **Admin > Push notifications** and send yourself one.
 
 Limits: on iPhone and iPad push only works after the app is added to the home screen (iOS 16.4 or later). The admin screen reports how many deliveries the push service accepted, not how many people read them.
 
 ---
 
-## Part K. Add real content
+## Part K. Publish the pilot content, then add your own
 
-The Atlas starts empty on purpose; nothing is invented.
+### K1. Publish the content from your prototype (one SQL file)
+1. In GitHub open `supabase` > `migrations` > `0007_publish_content.sql`, click **Copy raw file**.
+2. Supabase > **SQL Editor > New query**, paste, **Run**. It is safe to run twice; rows that exist are skipped.
+3. The result table at the bottom shows what is now published. Expect: 27 communities, 22 articles, 13 heritage records, 2 landmarks, 4 events, 2 people, 1 institution, 1 organisation, 1 proverb, 13 quiz questions.
+4. Reload the site. It now shows:
 
-1. **Admin > Communities > New:** preferred name with tone marks, country, coordinates, short summary, evidence label, then **Publish**. Tick "hide coordinates" for sensitive places. The Map and city pages update at once.
-2. Members contribute at **/contribute/**. You review in **Admin > Submissions**. **Approve and publish** puts an article on its city page or an event on the Events page and notifies the author. Request changes and Reject need written feedback.
-3. Add proverbs and quiz questions in Admin and mark them Published.
-4. Send a welcome notice: **Admin > Messages**.
+| Content | Where visitors see it |
+|---|---|
+| Communities and kingdoms | **Map** (markers and list), each has a **View Community** page |
+| Articles | The community's page, under topic filters (History, Language, Names, Spirituality, Culture, Food, Popular events); general ones show on **Community > Latest updates** |
+| Heritage records, Landmarks, Notable people, Traditional institutions, Organisations | **Library** (open it from the Map or Community page, or the Home page) |
+| Festivals and events | **Events** (dates show "to be confirmed" until you add them in Admin) |
+| Proverbs | **Community > Proverbs** |
+| Quiz questions | **Community > Quiz** (mixed with map-based questions) |
 
----
+**What this content is, and is not.** Everything comes from the files you supplied (the prototype's 27 places, its language, belief, culture, food, festival, proverb and history sections). I added nothing from outside them. It is marked **published** as you asked, but the prototype itself says each entry still needs source citations and community review. Two wording choices to check: I changed "Yoruba" to "Abínibí" everywhere except the language's own name "Èdè Yorùbá" and the history entry about the name "Yoruba" itself, because changing those would make them false. Landmark coordinates are left empty, because the prototype did not give them.
+
+### K2. Manage it as admin
+Dashboard > **Admin**. Each section (Articles, Communities, Heritage records, Landmarks, Festivals and events, Notable people, Traditional institutions, Organisations and services, Proverbs, Quiz questions) lets you create, edit, publish, unpublish and delete. Use **Publish all drafts** to publish a whole section at once. Edit dates for festivals, add coordinates for landmarks, and add sources as you verify them.
+
+### K3. Members' contributions
+Members submit at **/contribute/**. Review them in **Admin > Submissions**. "Approve and publish" puts an article on its community page or an event on the Events page, and notifies the author. Request changes and Reject need written feedback.
 
 ## Part L. Test before announcing
 
@@ -276,6 +307,8 @@ Use three accounts: you (admin), a second email as a **member**, a third as an *
 | Browser warns about the certificate | Wait for Netlify's HTTPS to finish; on Cloudflare use DNS only |
 | Map shows no communities | None published yet (Admin > Communities) |
 | Chat does not update live | Run `0006_selfcheck.sql`; fix the "Live chat" row; both people must be signed in |
+| Settings page shows loading forever | Fixed in the latest update: it now gives up waiting after a few seconds and shows the page. If you still see it, reload once, then use Settings > Check for updates |
+| Opening `/.netlify/functions/send-push` in the browser | A short message is correct. It now shows whether the push function is configured. Sending only happens from Admin > Push notifications |
 | Push says "not configured" | `vapidPublicKey` missing in `config.js`, Netlify variables missing, or not redeployed |
 | Push works on Android but not iPhone | iPhone needs the app added to the home screen (iOS 16.4+) |
 | Old content after an update | Reload once, or Settings > Check for updates |

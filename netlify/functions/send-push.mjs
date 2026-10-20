@@ -8,8 +8,12 @@ import { createClient } from '@supabase/supabase-js';
 const json = (status, obj) => new Response(JSON.stringify(obj), { status, headers: { 'content-type': 'application/json' } });
 
 export default async (req) => {
-  if (req.method !== 'POST') return json(405, { error: 'POST only' });
   const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT } = process.env;
+  if (req.method === 'GET') {   // setup check: shows which settings are present, never their values
+    const missing = Object.entries({ SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY }).filter(([, v]) => !v).map(([k]) => k);
+    return json(200, { function: 'send-push', deployed: true, ready: missing.length === 0, missing, note: 'Sending requires POST from the admin panel.' });
+  }
+  if (req.method !== 'POST') return json(405, { error: 'POST only' });
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return json(500, { error: 'Server is not configured for push yet.' });
 
   const token = (req.headers.get('authorization') || '').replace(/^Bearer /i, '');

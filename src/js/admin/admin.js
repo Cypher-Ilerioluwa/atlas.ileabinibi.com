@@ -75,7 +75,7 @@ async function content(table) {
     panel.querySelector('tbody').innerHTML = list.map(r => `<tr><td><b>${esc(String(r[def.title]).slice(0, 90))}</b>${hasSlug ? `<br><span class="muted small">/${esc(r.slug)}</span>` : ''}</td><td><span class="badge ${r.status === 'published' ? 'documented' : 'scholarly_interpretation'}">${esc(r.status)}</span></td><td>${fmt(r.updated_at || r.created_at)}</td>
       <td class="acts"><button class="chip" data-a="edit" data-id="${r.id}">Edit</button> <button class="chip" data-a="toggle" data-id="${r.id}">${r.status === 'published' ? 'Unpublish' : 'Publish'}</button>${ctx.isAdmin ? ` <button class="chip" data-a="del" data-id="${r.id}">Delete</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">Nothing here yet.</td></tr>';
   };
-  panel.innerHTML = `<div class="section-head"><h3 style="margin:0">${esc(def.label)}</h3><button class="btn" data-a="new">New</button></div>
+  panel.innerHTML = `<div class="section-head"><h3 style="margin:0">${esc(def.label)}</h3><span><button class="btn btn-ghost" data-a="pubAll">Publish all drafts</button> <button class="btn" data-a="new">New</button></span></div>
   <div class="bar"><input type="search" id="fq" placeholder="Filter" aria-label="Filter by name"><select id="fs" aria-label="Filter by status"><option value="all">All statuses</option><option>draft</option><option>published</option><option>archived</option></select></div>
   <table class="tbl"><thead><tr><th>Name</th><th>Status</th><th>Updated</th><th>Actions</th></tr></thead><tbody></tbody></table>`;
   draw(); $('fq').oninput = e => { q = e.target.value.toLowerCase(); draw(); }; $('fs').onchange = e => { st = e.target.value; draw(); };
@@ -84,6 +84,13 @@ async function content(table) {
     const b = e.target.closest('[data-a]'); if (!b) return; const row = rows.find(r => r.id === b.dataset.id);
     try {
       if (b.dataset.a === 'new') return edit(def, table, {}, refresh);
+      if (b.dataset.a === 'pubAll') {
+        const drafts = rows.filter(r => r.status === 'draft');
+        if (!drafts.length) return toast('There are no drafts to publish.');
+        if (!confirm(`Publish ${drafts.length} draft ${drafts.length === 1 ? 'item' : 'items'} in “${def.label}” now? They become visible to everyone.`)) return;
+        let done = 0; for (const r of drafts) { try { await api.save(table, { id: r.id, status: 'published', ...(table === 'articles' ? { published_at: r.published_at || new Date().toISOString() } : {}) }); done++; } catch (err) { fail(err); break; } }
+        toast(`Published ${done} of ${drafts.length}.`); return refresh();
+      }
       if (b.dataset.a === 'edit') return edit(def, table, row, refresh);
       if (b.dataset.a === 'toggle') { const pub = row.status !== 'published'; await api.save(table, { id: row.id, status: pub ? 'published' : 'draft', ...(pub && table === 'articles' ? { published_at: row.published_at || new Date().toISOString() } : {}) }); toast(pub ? 'Published.' : 'Unpublished.'); await refresh(); }
       if (b.dataset.a === 'del' && confirm(`Delete “${row[def.title]}” permanently? This cannot be undone.`)) { await api.remove(table, row.id); toast('Deleted.'); await refresh(); }
@@ -176,8 +183,9 @@ function push() {
   panel.innerHTML = `<h3>Send a push notification</h3><form id="pf" class="card formcard"><div class="fld"><label for="aud">Send to</label><select id="aud"><option value="all">Everyone who turned push on</option><option value="selected">Chosen people (emails)</option></select></div>
   <div class="fld" id="emw" hidden><label for="ems">Email addresses</label><textarea id="ems" rows="3"></textarea></div><div class="fld"><label for="mt">Title *</label><input id="mt" type="text" maxlength="120"></div><div class="fld"><label for="mb">Message</label><textarea id="mb" rows="3" maxlength="300"></textarea></div>
   <div class="fld"><label for="ml">Opens (optional)</label><input id="ml" type="text" placeholder="/events/"></div><label class="chk"><input type="checkbox" id="alsoin" checked> Also save as an in-app notification</label><button class="btn" type="submit">Send push</button></form>
-  <p class="muted small">Push reaches only people who enabled it in Settings and allowed it in their browser. It needs the Netlify function and VAPID keys (see docs/GO_LIVE.md). Delivery counts below are reported by the push service, not guessed.</p><p id="pres" role="status"></p>`;
+  <p class="muted small">Push reaches only people who enabled it in Settings and allowed it in their browser. It needs the Netlify function and VAPID keys (see docs/GO_LIVE.md). Delivery counts below are reported by the push service, not guessed.</p><p><button class="btn btn-ghost" type="button" id="pcheck">Check push setup</button></p><p id="pres" role="status"></p>`;
   wireAudience();
+  $('pcheck').onclick = async () => { try { const r = await api.pushStatus(); $('pres').textContent = r.ready ? 'Push function is deployed and fully configured.' : `Push function is deployed, but these settings are missing in Netlify: ${r.missing.join(', ')}.`; } catch (err) { $('pres').textContent = 'Could not reach the push function: ' + err.message; } };
   $('pf').onsubmit = async e => {
     e.preventDefault(); if (!$('mt').value.trim()) return toast('Add a title.'); if ($('aud').value === 'selected' && !emails().length) return toast('Add at least one email.');
     if (!confirm('Send this push notification now?')) return;

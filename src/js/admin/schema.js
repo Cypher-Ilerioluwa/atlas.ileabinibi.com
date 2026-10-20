@@ -20,7 +20,7 @@ export const TABLES = {
     t('author_credit', 'Author credit'), ta('sources', 'Sources'), evidence, status ] },
   communities: { label: 'Communities and kingdoms', title: 'preferred_name', fields: [
     t('slug', 'URL slug (auto if empty)'), t('preferred_name', 'Preferred name (with tone marks)', { required: true }),
-    sel('kind', 'Type', ['town','kingdom','community','diaspora'], { required: true }), t('country', 'Country', { required: true }), t('admin_area', 'State or administrative area'),
+    sel('kind', 'Type', ['town','kingdom','community','diaspora'], { required: true }), t('country', 'Country', { required: true }), sel('region_group', 'Region group (for map filters)', ['Nigeria','West Africa','Americas','Europe','Other']), t('admin_area', 'State or administrative area'),
     num('lat', 'Latitude'), num('lng', 'Longitude'), t('coord_source', 'Coordinate source'), t('coord_precision', 'Coordinate precision'),
     chk('coord_verified', 'Coordinate verified'), chk('coord_sensitive', 'Sensitive: hide coordinates from the public'),
     ta('summary', 'Summary'), ta('body', 'Full text'), evidence, status ] },

@@ -1,4 +1,4 @@
-import { getContext } from '../api.js';
+import { getContext, withTimeout } from '../api.js';
 import { getClient } from '../supabase.js';
 import { isConfigured, demoRole, setDemoRole, labelAccountLink, getTheme, setTheme, fmtDate, fmtDateTime, label } from '../core.js';
 import { esc } from '../search.js';
@@ -115,7 +115,9 @@ async function dashboard() {
 async function render() {
   document.querySelectorAll('.dnav [data-s]').forEach(b => b.dataset.s === section ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'));
   const p = $('dpanel'); p.innerHTML = '<div class="loading"><span class="spinner"></span> Loading…</div>';
-  try { await ({ overview, account, posts, notifications, settings, admin }[section] || overview)(p); } catch (e) { p.innerHTML = `<div class="empty"><h3>Something went wrong</h3><p>${esc(e.message)}</p></div>`; }
+  const dog = setTimeout(() => { if (p.querySelector(':scope > .loading')) { p.innerHTML = '<div class="empty"><h3>This is taking too long</h3><p>Check your connection, then try again.</p><button class="btn" id="retry" type="button">Try again</button></div>'; $('retry').onclick = render; } }, 15000);
+  try { await ({ overview, account, posts, notifications, settings, admin }[section] || overview)(p); } catch (e) { p.innerHTML = `<div class="empty"><h3>Something went wrong</h3><p>${esc(e.message)}</p><button class="btn" id="retry" type="button">Try again</button></div>`; $('retry').onclick = render; }
+  clearTimeout(dog);
 }
 
 async function overview(p) {
@@ -164,7 +166,7 @@ async function notifications(p) {
 }
 
 async function settings(p) {
-  const prefs = await ctx.api.prefs(), push = await ctx.api.pushState().catch(() => 'unsupported'), theme = getTheme();
+  const prefs = await withTimeout(ctx.api.prefs().catch(() => null), 8000, null) || { submission_updates: true, event_reminders: true, announcements: false }, push = await withTimeout(ctx.api.pushState().catch(() => 'unsupported'), 6000, 'off'), theme = getTheme();
   const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   const sw = (id, t, d, on) => `<label class="switch" for="${id}"><span><b>${t}</b><br><span class="muted small">${d}</span></span><input type="checkbox" id="${id}" ${on ? 'checked' : ''}></label>`;
   p.innerHTML = `<h1 style="font-size:var(--step-2)">Settings</h1>

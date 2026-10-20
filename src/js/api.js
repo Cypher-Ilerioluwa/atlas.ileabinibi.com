@@ -4,6 +4,7 @@ import { config } from './config.js';
 import { getClient } from './supabase.js';
 import { isConfigured, demoRole, slugify } from './core.js';
 import { places } from './data/places.demo.js';
+import { seed } from './data/seed-content.js';
 
 export const TOPICS = ['history', 'people', 'language', 'culture', 'food', 'spirituality', 'names', 'popular_event'];
 export const TOPIC_LABEL = { history: 'History', people: 'People', language: 'Language', culture: 'Culture', food: 'Food', spirituality: 'Spirituality', names: 'Names', popular_event: 'Popular events' };
@@ -14,20 +15,19 @@ const dayOffset = n => { const d = new Date(); d.setDate(d.getDate() + n); retur
 
 // ---------------- demo database ----------------
 function seedDemo() {
-  const communities = places.map(p => ({ id: 'c-' + p.id, slug: p.id, preferred_name: p.name, alt: p.alt, kind: 'town', country: p.country, region: p.region, lat: p.lat, lng: p.lng, summary: p.summary, evidence: p.evidence, status: 'published', created_at: nowIso(), demo: true }));
-  const first = communities[0].id;
+  const communities = places.map(p => ({ id: 'c-' + p.id, slug: p.id, preferred_name: p.name, alt: p.alt, kind: 'town', country: p.country, region: p.region, region_group: p.region, lat: p.lat, lng: p.lng, summary: p.summary, evidence: p.evidence, status: 'published', created_at: nowIso(), demo: true }));
+  const cid = s => (s ? 'c-' + s : null), base = () => ({ id: uid(), status: 'published', created_at: nowIso(), demo: true });
   return {
     communities,
-    articles: [
-      { id: uid(), slug: 'sample-history', community_id: first, topic: 'history', title: 'Sample post: how a history article looks', summary: 'Layout sample only.', body: 'This is a sample post that shows how a community article is laid out. It contains no real research.', status: 'published', published_at: nowIso(), created_at: nowIso(), author_credit: 'Demo', demo: true },
-      { id: uid(), slug: 'sample-food', community_id: first, topic: 'food', title: 'Sample post: how a food article looks', summary: 'Layout sample only.', body: 'Another layout sample. Real posts appear here after an administrator approves a contribution.', status: 'published', published_at: nowIso(), created_at: nowIso(), author_credit: 'Demo', demo: true }],
-    events: [
-      { id: uid(), slug: 'sample-upcoming', name: 'Sample upcoming event', community_id: first, summary: 'Layout sample only.', location_text: 'Sample venue', region_text: 'Sample region', date_start: dayOffset(12), status: 'published', created_at: nowIso(), demo: true },
-      { id: uid(), slug: 'sample-past', name: 'Sample past event', community_id: first, summary: 'Layout sample only.', location_text: 'Sample venue', region_text: 'Sample region', date_start: dayOffset(-25), status: 'published', created_at: nowIso(), demo: true }],
-    heritage_records: [], landmarks: [], people: [], institutions: [], organisations: [],
-    proverbs: [
-      { id: uid(), text_original: 'Ìwà lẹ̀wà ọmọ ènìyàn.', translation: 'Good character is a person’s beauty.', meaning: 'Sample entry. Spelling and meaning await review by an Abínibí-language editor.', status: 'published', created_at: nowIso(), demo: true }],
-    quiz_questions: [],
+    articles: seed.articles.map(a => ({ ...base(), slug: a.slug, community_id: cid(a.community), topic: a.topic, title: a.title, summary: a.summary, body: a.body, region_text: a.region_text, author_credit: a.author_credit, sources: a.sources, evidence: a.evidence, published_at: nowIso() })),
+    events: seed.events.map(e => ({ ...base(), slug: e.slug, name: e.name, community_id: cid(e.community), summary: e.summary, location_text: e.location, region_text: e.region_text, date_start: null, confidence: 'recurring_variable', recurrence_note: e.recurrence })),
+    heritage_records: seed.heritage_records.map(h => ({ ...base(), ...h, community_id: cid(h.community) })),
+    landmarks: seed.landmarks.map(l => ({ ...base(), ...l, community_id: cid(l.community) })),
+    people: seed.people.map(p => ({ ...base(), ...p, preferred_name: p.name })),
+    institutions: seed.institutions.map(x => ({ ...base(), ...x, community_id: cid(x.community) })),
+    organisations: seed.organisations.map(o => ({ ...base(), ...o, community_id: cid(o.community) })),
+    proverbs: seed.proverbs.map(p => ({ ...base(), ...p })),
+    quiz_questions: seed.quiz_questions.map(q => ({ ...base(), ...q })),
     subs: [
       { id: uid(), user_id: 'demo-user', kind: 'article', title: 'Sample pending article', region_text: 'Sample region', payload: { topic: 'culture', body: 'Demo only' }, consent_given: true, status: 'submitted', created_at: nowIso() },
       { id: uid(), user_id: 'demo-user', kind: 'event', title: 'Sample rejected event', region_text: 'Sample region', payload: {}, consent_given: true, status: 'rejected', editor_feedback: 'Sample feedback: please add the exact venue.', created_at: nowIso() },
@@ -53,8 +53,12 @@ const persist = () => { try { sessionStorage.setItem('atlas-demo-db', JSON.strin
 // ---------------- public data (no sign-in needed) ----------------
 export async function loadCommunities() {
   if (!isConfigured()) return { demo: true, rows: db().communities };
-  const rows = must(await (await getClient()).from('communities_public').select('*').order('preferred_name'));
-  return { demo: false, rows: rows.map(r => ({ ...r, region: r.kind === 'diaspora' ? 'Diaspora' : r.country })) };
+  const c = await getClient();
+  const rows = must(await c.from('communities_public').select('*').order('preferred_name'));
+  let names = [];
+  try { names = (await c.from('community_names_public').select('community_id,name')).data || []; } catch {}
+  const alt = new Map(); names.forEach(n => alt.set(n.community_id, [...(alt.get(n.community_id) || []), n.name]));
+  return { demo: false, rows: rows.map(r => ({ ...r, alt: (alt.get(r.id) || []).join(', '), region: r.region_group || (r.kind === 'diaspora' ? 'Diaspora' : r.country) })) };
 }
 export async function loadArticles(communityId) {
   if (!isConfigured()) return db().articles.filter(a => !communityId || a.community_id === communityId);
@@ -65,6 +69,11 @@ export async function loadArticles(communityId) {
 export async function loadEvents() {
   if (!isConfigured()) return db().events;
   return must(await (await getClient()).from('events_public').select('*').order('date_start', { ascending: true, nullsFirst: false }).limit(500));
+}
+const LIB_VIEW = { heritage_records: 'heritage_records_public', landmarks: 'landmarks_public', people: 'people_public', institutions: 'institutions_public', organisations: 'organisations_public' };
+export async function loadLibrary(kind) {
+  if (!isConfigured()) return db()[kind] || [];
+  return must(await (await getClient()).from(LIB_VIEW[kind]).select('*').limit(500));
 }
 export async function loadProverbs() {
   if (!isConfigured()) return db().proverbs;
@@ -107,6 +116,7 @@ export async function getContext() {
   return { mode: 'live', user, roles, profile, banned: Boolean(profile?.banned), isAdmin: roles.includes('admin'), isEditor: roles.some(r => ['admin', 'community_editor', 'research_editor'].includes(r)), api: liveApi(c, user, session) };
 }
 
+export const withTimeout = (p, ms, fallback) => Promise.race([p, new Promise(r => setTimeout(() => r(fallback), ms))]);
 const b64ToU8 = s => { const p = '='.repeat((4 - s.length % 4) % 4), r = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...r].map(ch => ch.charCodeAt(0))); };
 const ADMIN_TABLES = ['communities', 'articles', 'events', 'heritage_records', 'landmarks', 'people', 'institutions', 'organisations', 'proverbs', 'quiz_questions'];
 const SAFE_NAME = n => n.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-80);
@@ -146,21 +156,26 @@ function liveApi(c, user, session) {
     async pushState() {
       if (!('serviceWorker' in navigator && 'PushManager' in window)) return 'unsupported';
       if (Notification.permission === 'denied') return 'denied';
-      const reg = await navigator.serviceWorker.ready; return (await reg.pushManager.getSubscription()) ? 'on' : 'off';
+      const reg = await withTimeout(navigator.serviceWorker.ready, 2500, null);
+      if (!reg) return 'off';
+      return (await withTimeout(reg.pushManager.getSubscription(), 2500, null)) ? 'on' : 'off';
     },
     async pushSubscribe() {
       if (!('serviceWorker' in navigator && 'PushManager' in window)) throw new Error('Push notifications are not supported in this browser.');
       if (!config.vapidPublicKey) throw new Error('Push is not configured yet: the VAPID public key is missing in config.js.');
       if (await Notification.requestPermission() !== 'granted') throw new Error('Permission was not granted in the browser.');
-      const reg = await navigator.serviceWorker.ready;
+      if (!(await navigator.serviceWorker.getRegistration())) await navigator.serviceWorker.register('/sw.js');
+      const reg = await withTimeout(navigator.serviceWorker.ready, 8000, null);
+      if (!reg) throw new Error('The background service did not start. Reload the page once and try again.');
       const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(config.vapidPublicKey) });
       const j = sub.toJSON();
       must(await c.from('push_subscriptions').upsert({ user_id: user.id, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, user_agent: navigator.userAgent.slice(0, 200), expired_at: null }, { onConflict: 'endpoint' }));
     },
     async pushUnsubscribe() {
-      const reg = await navigator.serviceWorker.ready, sub = await reg.pushManager.getSubscription();
+      const reg = await withTimeout(navigator.serviceWorker.ready, 3000, null), sub = reg && await reg.pushManager.getSubscription();
       if (sub) { must(await c.from('push_subscriptions').delete().eq('endpoint', sub.endpoint)); await sub.unsubscribe(); }
     },
+    async pushStatus() { const r = await fetch('/.netlify/functions/send-push'); return r.json(); },
     // ---- admin / editor ----
     async counts() {
       const o = {};
@@ -254,6 +269,7 @@ function demoApi(user, admin) {
       D().notifs.push({ id: uid(), kind: 'message', title, body, link: null, read_at: null, created_at: nowIso() }); persist(); return n;
     },
     sendPush: async () => { throw new Error('Push delivery needs the live site with the Netlify function configured.'); },
+    pushStatus: async () => { throw new Error('Available on the live site only.'); },
     audit: async () => D().audit
   };
 }

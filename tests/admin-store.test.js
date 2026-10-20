@@ -23,7 +23,17 @@ test('demo admin: guards on roles, bans and self-delete', async () => {
   await assert.rejects(api.setBan('admin-1', true), /yourself/);
   await assert.rejects(api.deleteUser('admin-1'), /danger zone/);
 });
-test('events sample includes upcoming and past', async () => {
-  const ev = await loadEvents(), today = new Date().toISOString().slice(0, 10);
-  assert.ok(ev.some(e => e.date_start >= today) && ev.some(e => e.date_start < today));
+test('pilot content is loaded for every section in demo mode', async () => {
+  const { loadLibrary, loadEvents, loadProverbs, loadQuizRows, loadCommunities } = await import('../src/js/api.js');
+  assert.equal((await loadCommunities()).rows.length, 27);
+  assert.ok((await loadArticles()).length >= 20);
+  assert.equal((await loadEvents()).length, 4);
+  for (const k of ['heritage_records', 'landmarks', 'people', 'institutions', 'organisations']) assert.ok((await loadLibrary(k)).length >= 1, k);
+  assert.equal((await loadProverbs()).length, 1);
+  assert.ok((await loadQuizRows()).length >= 10);
+});
+test('withTimeout resolves with the fallback when a promise never settles', async () => {
+  const { withTimeout } = await import('../src/js/api.js');
+  assert.equal(await withTimeout(new Promise(() => {}), 30, 'fallback'), 'fallback');
+  assert.equal(await withTimeout(Promise.resolve('ok'), 30, 'fallback'), 'ok');
 });
