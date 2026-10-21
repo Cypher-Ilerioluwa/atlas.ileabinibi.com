@@ -1,0 +1,21 @@
+<!--page title="All posts | Ilẹ̀ Abínibí Atlas" desc="Every post from every Abínibí community, with topic filters." nav="map" noindex-->
+<!doctype html>
+<html lang="en">
+<head>
+<!--include:head-->
+</head>
+<body>
+<!--include:header-->
+<main id="main">
+  <div class="wrap">
+    <div class="page-head"><h1>All posts</h1><p class="lede" style="font-size:var(--step-1);color:var(--ink-soft)">History, people, language, culture, food, spirituality, names and events from every community.</p></div>
+    <div class="filterbar" id="filterbar"><div class="chips" id="filters" role="group" aria-label="Filter posts by topic"></div></div>
+    <div class="bar"><div class="fld" style="margin:0;flex:1;min-width:220px"><label class="visually-hidden" for="pq">Search posts</label><input id="pq" type="search" placeholder="Search posts"></div>
+    <div class="fld" style="margin:0"><label class="visually-hidden" for="pc">Community</label><select id="pc"><option value="">All communities</option></select></div></div>
+    <div class="stack" id="posts" aria-live="polite"></div><p style="text-align:center;margin-top:var(--space-5)"><button class="btn btn-ghost" id="more" hidden>Load more</button></p>
+  </div>
+</main>
+<!--include:footer-->
+<script type="module" src="/js/posts-page.js"></script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 -- Run any time. Shows one row per check with OK or MISSING. Nothing is changed.
 select item, expected, found, case when ok then 'OK' else 'MISSING' end as status from (
-  select 'Tables created' as item, '29' as expected, count(*)::text as found, count(*) >= 29 as ok
+  select 'Tables created' as item, '33' as expected, count(*)::text as found, count(*) >= 33 as ok
     from pg_tables where schemaname = 'public'
   union all
   select 'Tables with security (RLS) OFF', '0', count(*)::text, count(*) = 0
@@ -9,9 +9,9 @@ select item, expected, found, case when ok then 'OK' else 'MISSING' end as statu
   select 'Public views', '11', count(*)::text, count(*) >= 11
     from pg_views where schemaname = 'public' and viewname like '%\_public' escape '\'
   union all
-  select 'Key functions (has_role, is_editor, approve_submission, admin_list_users, admin_set_role, admin_send_notification, delete_my_account, search_public)', '8', count(*)::text, count(*) = 8
+  select 'Key functions (has_role, is_editor, approve_submission, admin_list_users, admin_set_role, admin_send_notification, delete_my_account, search_public, ensure_contributor, admin_set_credits)', '10', count(*)::text, count(*) = 10
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'public' and p.proname in ('has_role','is_editor','approve_submission','admin_list_users','admin_set_role','admin_send_notification','delete_my_account','search_public')
+    where n.nspname = 'public' and p.proname in ('has_role','is_editor','approve_submission','admin_list_users','admin_set_role','admin_send_notification','delete_my_account','search_public','ensure_contributor','admin_set_credits')
   union all
   select 'Sign-up trigger on auth.users', '1', count(*)::text, count(*) = 1
     from pg_trigger t join pg_class c on c.oid = t.tgrelid join pg_namespace n on n.oid = c.relnamespace
@@ -31,6 +31,6 @@ select item, expected, found, case when ok then 'OK' else 'MISSING' end as statu
     from pg_policies where schemaname = 'storage' and tablename = 'objects'
       and policyname in ('public media readable','editors write public media','editors update public media','own submission upload','own submission read','own submission delete','avatars readable','own avatar write','own avatar update','own avatar delete')
   union all
-  select 'Live chat switched on (realtime)', '1', count(*)::text, count(*) = 1
-    from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'chat_messages'
+  select 'Live chat switched on (realtime: messages, reactions, read receipts)', '3', count(*)::text, count(*) = 3
+    from pg_publication_tables where pubname = 'supabase_realtime' and tablename in ('chat_messages','chat_reactions','chat_reads')
 ) c order by ok, item;

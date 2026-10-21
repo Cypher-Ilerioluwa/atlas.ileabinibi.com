@@ -21,7 +21,7 @@
   --danger:#9B2C1C;
   --ok:#2F5D3A;
 
-  --font-display:"Fraunces","Iowan Old Style",Georgia,"Times New Roman",serif;
+  --font-display:"Noto Serif","Iowan Old Style",Georgia,"Times New Roman",serif;
   --font-body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 
   --step--1:clamp(.84rem,.82rem + .1vw,.9rem);
@@ -35,7 +35,7 @@
   --space-6:2.25rem;--space-7:3.5rem;--space-8:5.5rem;
   --radius-s:6px;--radius-m:12px;--radius-l:22px;
   --measure:68ch;
-  --wrap:1180px;
+  --wrap:1280px;
   --ease:cubic-bezier(.2,.7,.2,1);
 }
 

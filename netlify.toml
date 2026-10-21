@@ -32,6 +32,11 @@
     Cache-Control = "public, max-age=31536000, immutable"
 
 [[redirects]]
+  from = "/calendar/*"
+  to = "/kojoda/"
+  status = 301
+
+[[redirects]]
   from = "/atlas/*"
   to = "/map/"
   status = 301

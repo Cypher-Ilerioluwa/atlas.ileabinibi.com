@@ -64,3 +64,5 @@ label{font-weight:600;display:block;margin-bottom:.3rem}
 input[type=search],input[type=text],input[type=email],input[type=password],input[type=date],input[type=number],input[type=url],textarea,select{width:100%;min-height:46px;padding:.55rem .9rem;border:1.5px solid var(--ink-soft);border-radius:var(--radius-s);background:var(--surface);color:var(--ink);font:inherit}
 textarea{min-height:96px;resize:vertical}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+[hidden]{display:none!important}

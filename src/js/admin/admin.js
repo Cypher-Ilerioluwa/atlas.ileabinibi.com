@@ -3,6 +3,7 @@ import { esc } from '../search.js';
 import { toast } from '../shell.js';
 import { fmtDateTime as fmt, label, slugify } from '../core.js';
 import { TABLES, ROLES, SUBMISSION_STATUSES, FUNCTIONS } from './schema.js';
+import { getCreditsText, setCreditsText, typeOf } from '../content.js';
 
 const fail = e => toast(e.message || 'Something went wrong.', 6000);
 const $ = id => document.getElementById(id);
@@ -11,7 +12,7 @@ let ctx, api, host, panel, communities = [];
 export async function mountAdmin(el, c) {
   ctx = c; api = c.api; host = el;
   const nav = [['monitor', 'Monitoring'], ['submissions', 'Submissions'], ...(ctx.isAdmin ? [['users', 'Users']] : []),
-    ...Object.entries(TABLES).map(([k, v]) => [k, v.label]), ...(ctx.isAdmin ? [['messages', 'Messages'], ['push', 'Push notifications']] : []), ['corrections', 'Corrections'], ...(ctx.isAdmin ? [['audit', 'Audit trail']] : []), ['functions', 'All functions']];
+    ...Object.entries(TABLES).map(([k, v]) => [k, v.label]), ...(ctx.isAdmin ? [['messages', 'Messages'], ['push', 'Push notifications'], ['sync', 'ileabinibi.com sync']] : []), ['corrections', 'Corrections'], ...(ctx.isAdmin ? [['audit', 'Audit trail']] : []), ['functions', 'All functions']];
   host.innerHTML = `<div class="admin-wrap"><h2>Admin</h2><div class="subnav" id="subnav" role="group" aria-label="Admin sections">${nav.map(([k, t]) => `<button class="chip" type="button" data-s="${k}" aria-pressed="false">${esc(t)}</button>`).join('')}</div><div id="apanel" class="panel"></div></div>`;
   panel = $('apanel');
   $('subnav').onclick = e => { const b = e.target.closest('[data-s]'); if (b) show(b.dataset.s); };
@@ -23,7 +24,7 @@ async function show(s) {
   panel.innerHTML = '<div class="loading"><span class="spinner"></span> Loading…</div>';
   try {
     if (s === 'monitor') await monitor(); else if (s === 'submissions') await submissions(); else if (s === 'users') await users();
-    else if (TABLES[s]) await content(s); else if (s === 'messages') messages(); else if (s === 'push') push();
+    else if (TABLES[s]) await content(s); else if (s === 'messages') messages(); else if (s === 'push') push(); else if (s === 'sync') sync();
     else if (s === 'corrections') await corrections(); else if (s === 'audit') await audit(); else functions();
   } catch (e) { panel.innerHTML = `<div class="empty"><h3>Could not load</h3><p>${esc(e.message)}</p></div>`; }
 }
@@ -37,8 +38,7 @@ async function monitor() {
     <div class="stat st-approved"><b>${c.sub_approved}</b>approved</div><div class="stat st-rejected"><b>${c.sub_rejected}</b>rejected</div>
     <div class="stat"><b>${c.articles.published}</b>published articles <span class="muted small">(of ${c.articles.total})</span></div>
     <div class="stat"><b>${c.events.published}</b>published events</div><div class="stat"><b>${c.corrections_open}</b>open corrections</div></div>
-    <h3>All content</h3><table class="tbl"><thead><tr><th>Section</th><th>Published</th><th>Total</th></tr></thead><tbody>${Object.entries(TABLES).map(([k, v]) => `<tr><td>${esc(v.label)}</td><td>${c[k].published}</td><td>${c[k].total}</td></tr>`).join('')}</tbody></table>
-    <p class="muted small">Counts come straight from the database.</p>`;
+    <h3>All content</h3><table class="tbl"><thead><tr><th>Section</th><th>Published</th><th>Total</th></tr></thead><tbody>${Object.entries(TABLES).map(([k, v]) => `<tr><td>${esc(v.label)}</td><td>${c[k].published}</td><td>${c[k].total}</td></tr>`).join('')}</tbody></table>`;
 }
 
 // ---------- content editor ----------
@@ -97,14 +97,21 @@ async function content(table) {
     } catch (err) { fail(err); }
   };
 }
+const CREDIT_TYPES = ['articles', 'events', 'heritage_records', 'landmarks', 'people', 'institutions', 'organisations'];
 function edit(def, table, row, done) {
-  const dlg = $('dlg');
-  dlg.innerHTML = `<form method="dialog" id="ef"><h2>${row.id ? 'Edit' : 'New'}: ${esc(def.label)}</h2>${def.fields.map(f => fieldHtml(f, row)).join('')}
+  const dlg = $('dlg'), withCredits = CREDIT_TYPES.includes(table), ctype = typeOf(table);
+  dlg.innerHTML = `<form method="dialog" id="ef"><h2>${row.id ? 'Edit' : 'New'}: ${esc(def.label)}</h2><div class="fgrid">${def.fields.map(f => `<div class="${['textarea', 'lines'].includes(f.type) || f.name === 'summary' ? '' : 'half'}">${fieldHtml(f, row)}</div>`).join('')}</div>
+  ${withCredits ? `<div class="fld"><label for="f_credits">Credits: one person per line as Name | role (the first line is the author)</label><textarea id="f_credits" rows="3" placeholder="Ada Obi | author&#10;Tunde Bello | editor"></textarea></div>` : ''}
   <div class="bar"><button class="btn" value="save">Save</button><button class="btn btn-ghost" value="cancel" formnovalidate>Cancel</button></div></form>`;
   dlg.showModal();
+  if (withCredits && row.id) getCreditsText(ctype, row.id).then(t => { const x = $('f_credits'); if (x) x.value = t; }).catch(() => {});
   dlg.querySelector('#ef').addEventListener('submit', async e => {
     if (e.submitter?.value !== 'save') return; e.preventDefault();
-    try { await api.save(table, collect(def, e.target, row)); dlg.close(); toast('Saved.'); await done(); } catch (err) { fail(err); }
+    try {
+      const saved = await api.save(table, collect(def, e.target, row)), credits = $('f_credits')?.value ?? null;
+      if (withCredits && credits !== null && (credits.trim() || row.id)) await setCreditsText(ctype, saved.id || row.id, credits);
+      dlg.close(); toast('Saved.'); await done();
+    } catch (err) { fail(err); }
   });
 }
 
@@ -121,7 +128,7 @@ async function submissions() {
       <div class="bar">${[['under_review', 'Mark under review'], ['changes_requested', 'Request changes'], ['approved', s.kind === 'edit' ? 'Approve and apply' : 'Approve and publish'], ['rejected', 'Reject']].map(([v, t]) => `<button class="chip" data-d="${v}">${t}</button>`).join('')}</div></article>`).join('') || '<div class="empty"><h3>Nothing in this view</h3></div>';
   };
   panel.innerHTML = `<h3>Submissions</h3><div class="bar"><label class="visually-hidden" for="rf">Show</label><select id="rf"><option value="open">Needs attention</option><option value="all">All</option>${SUBMISSION_STATUSES.map(s => `<option value="${s}">${label(s)}</option>`).join('')}</select></div>
-  <p class="notice">Approving an article or event publishes it and tells the contributor. Approving a correction applies its new text to the article or event it names; for community pages, apply it by hand in Content. Rejecting or requesting changes needs feedback.</p><div id="subs"></div>`;
+<div id="subs"></div>`;
   draw(); $('rf').onchange = e => { f = e.target.value; draw(); };
   panel.addEventListener('toggle', async e => { const m = e.target.querySelector?.('.media'); if (e.target.open && m && !m.dataset.done) { m.dataset.done = 1; const paths = JSON.parse(m.dataset.m || '[]'); if (paths.length) { try { const l = await api.mediaLinks(paths); m.innerHTML = '<p><b>Files (links expire in 10 minutes):</b></p>' + l.map(x => `<p><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.path.split('/').pop())}</a></p>`).join(''); } catch {} } } }, true);
   panel.onclick = async e => {
@@ -142,7 +149,7 @@ async function users() {
   };
   panel.innerHTML = `<h3>Users</h3><div class="bar"><input type="search" id="uq" placeholder="Search name or email" aria-label="Search users"></div>
   <table class="tbl"><thead><tr><th>User</th><th>Rights</th><th>Posts</th><th>Joined / last seen</th><th>Actions</th></tr></thead><tbody></tbody></table>
-  <p class="muted small">Roles are enforced by the database. The last administrator cannot be removed or deleted. Deleting a user removes their account and submissions permanently.</p>`;
+`;
   draw(); $('uq').oninput = e => { q = e.target.value.toLowerCase(); draw(); };
   const reload = async () => { list = await api.users(); draw(); };
   panel.onclick = async e => {
@@ -171,7 +178,7 @@ function audienceForm(withLink) {
 const emails = () => $('ems').value.split(/[\s,;]+/).filter(x => /\S+@\S+/.test(x));
 function wireAudience() { $('aud').onchange = () => { $('emw').hidden = $('aud').value !== 'selected'; }; }
 function messages() {
-  panel.innerHTML = `<h3>Send an in-app notification</h3><form id="mf" class="card formcard">${audienceForm(true)}<button class="btn" type="submit">Send notification</button></form><p class="muted small">Appears in each person’s Notifications tab. Use Push notifications to also alert their devices.</p>`;
+  panel.innerHTML = `<h3>Send an in-app notification</h3><form id="mf" class="card formcard">${audienceForm(true)}<button class="btn" type="submit">Send notification</button></form>`;
   wireAudience();
   $('mf').onsubmit = async e => {
     e.preventDefault(); if (!$('mt').value.trim()) return toast('Add a title.'); if ($('aud').value === 'selected' && !emails().length) return toast('Add at least one email.');
@@ -183,7 +190,7 @@ function push() {
   panel.innerHTML = `<h3>Send a push notification</h3><form id="pf" class="card formcard"><div class="fld"><label for="aud">Send to</label><select id="aud"><option value="all">Everyone who turned push on</option><option value="selected">Chosen people (emails)</option></select></div>
   <div class="fld" id="emw" hidden><label for="ems">Email addresses</label><textarea id="ems" rows="3"></textarea></div><div class="fld"><label for="mt">Title *</label><input id="mt" type="text" maxlength="120"></div><div class="fld"><label for="mb">Message</label><textarea id="mb" rows="3" maxlength="300"></textarea></div>
   <div class="fld"><label for="ml">Opens (optional)</label><input id="ml" type="text" placeholder="/events/"></div><label class="chk"><input type="checkbox" id="alsoin" checked> Also save as an in-app notification</label><button class="btn" type="submit">Send push</button></form>
-  <p class="muted small">Push reaches only people who enabled it in Settings and allowed it in their browser. It needs the Netlify function and VAPID keys (see docs/GO_LIVE.md). Delivery counts below are reported by the push service, not guessed.</p><p><button class="btn btn-ghost" type="button" id="pcheck">Check push setup</button></p><p id="pres" role="status"></p>`;
+  <p><button class="btn btn-ghost" type="button" id="pcheck">Check push setup</button></p><p id="pres" role="status"></p>`;
   wireAudience();
   $('pcheck').onclick = async () => { try { const r = await api.pushStatus(); $('pres').textContent = r.ready ? 'Push function is deployed and fully configured.' : `Push function is deployed, but these settings are missing in Netlify: ${r.missing.join(', ')}.`; } catch (err) { $('pres').textContent = 'Could not reach the push function: ' + err.message; } };
   $('pf').onsubmit = async e => {
@@ -197,6 +204,17 @@ function push() {
     } catch (err) { fail(err); $('pres').textContent = 'Not sent: ' + err.message; }
     b.disabled = false;
   };
+}
+
+function sync() {
+  panel.innerHTML = `<h3>Import from ileabinibi.com</h3><p>Posts tagged <b>atlas</b> on ileabinibi.com are imported every hour into the matching section. Their other tags say which section, topic and community they belong to.</p>
+  <div class="card" style="margin-bottom:var(--space-4)"><b>Tags to use on WordPress</b><ul style="margin:.5rem 0 0;padding-left:1.2rem">
+  <li><code>atlas</code>: import this post</li><li><code>atlas:type:article</code> (or event, heritage, landmark, person, institution, organisation)</li><li><code>atlas:topic:history</code> (history, people, language, culture, food, spirituality, names, popular_event)</li>
+  <li><code>atlas:community:ile-ife</code>: the community’s slug</li><li><code>atlas:editor:Ọlá Adé</code>: one tag per co-editor</li><li><code>atlas:date:2026-08-14</code> and optional <code>atlas:enddate:2026-08-16</code>: for events</li><li><code>atlas:category:craft</code>: for heritage records</li></ul></div>
+  <p><button class="btn btn-ghost" type="button" id="wcheck">Check connection</button> <button class="btn" type="button" id="wsync">Sync now</button></p><div id="wres" role="status"></div>`;
+  $('wcheck').onclick = async () => { try { const r = await api.wpStatus(); $('wres').innerHTML = r.ready ? '<p>The import function is deployed and configured.</p>' : `<p>The import function is deployed, but these Netlify settings are missing: <b>${esc((r.missing || []).join(', '))}</b>.</p>`; } catch (err) { $('wres').textContent = 'Could not reach the import function: ' + err.message; } };
+  $('wsync').onclick = async e => { const b = e.target; b.disabled = true; $('wres').innerHTML = '<div class="loading"><span class="spinner"></span> Importing…</div>';
+    try { const r = await api.wpSync(); $('wres').innerHTML = `<div class="card"><b>Done.</b> Found ${r.found} tagged post${r.found === 1 ? '' : 's'}. New: ${r.created}. Updated: ${r.updated}. Archived (tag removed): ${r.archived}.${r.errors?.length ? `<br>Problems:<ul>${r.errors.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}</div>`; } catch (err) { $('wres').textContent = 'Import failed: ' + err.message; } b.disabled = false; };
 }
 
 async function corrections() {

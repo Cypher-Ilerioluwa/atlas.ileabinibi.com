@@ -15,6 +15,13 @@ const dayOffset = n => { const d = new Date(); d.setDate(d.getDate() + n); retur
 
 // ---------------- demo database ----------------
 function seedDemo() {
+  const d = seedBase();
+  const types = { articles: 'article', events: 'event', heritage_records: 'heritage_record', landmarks: 'landmark', people: 'person', institutions: 'institution', organisations: 'organisation' };
+  for (const [t, ty] of Object.entries(types)) for (const r of d[t]) d.content_contributors.push({ content_type: ty, content_id: r.id, contributor_id: 'ct-proto', role: 'author', position: 0 });
+  d.articles.slice(0, 4).forEach(a => d.content_contributors.push({ content_type: 'article', content_id: a.id, contributor_id: 'ct-editor', role: 'editor', position: 1 }));
+  return d;
+}
+function seedBase() {
   const communities = places.map(p => ({ id: 'c-' + p.id, slug: p.id, preferred_name: p.name, alt: p.alt, kind: 'town', country: p.country, region: p.region, region_group: p.region, lat: p.lat, lng: p.lng, summary: p.summary, evidence: p.evidence, status: 'published', created_at: nowIso(), demo: true }));
   const cid = s => (s ? 'c-' + s : null), base = () => ({ id: uid(), status: 'published', created_at: nowIso(), demo: true });
   return {
@@ -28,6 +35,9 @@ function seedDemo() {
     organisations: seed.organisations.map(o => ({ ...base(), ...o, community_id: cid(o.community) })),
     proverbs: seed.proverbs.map(p => ({ ...base(), ...p })),
     quiz_questions: seed.quiz_questions.map(q => ({ ...base(), ...q })),
+    contributors: [{ id: 'ct-proto', slug: 'ile-abinibi-atlas-prototype', display_name: 'Ilẹ̀ Abínibí Atlas prototype', avatar_path: null, bio: 'Pilot content from the first Atlas prototype.' },
+                   { id: 'ct-editor', slug: 'sample-editor', display_name: 'Sample editor', avatar_path: null, bio: 'A sample editor shown in the preview.' }],
+    content_contributors: [],
     subs: [
       { id: uid(), user_id: 'demo-user', kind: 'article', title: 'Sample pending article', region_text: 'Sample region', payload: { topic: 'culture', body: 'Demo only' }, consent_given: true, status: 'submitted', created_at: nowIso() },
       { id: uid(), user_id: 'demo-user', kind: 'event', title: 'Sample rejected event', region_text: 'Sample region', payload: {}, consent_given: true, status: 'rejected', editor_feedback: 'Sample feedback: please add the exact venue.', created_at: nowIso() },
@@ -46,8 +56,12 @@ let demoDb;
 function db() {
   if (demoDb) return demoDb;
   try { demoDb = JSON.parse(sessionStorage.getItem('atlas-demo-db')); } catch {}
-  return demoDb || (demoDb = seedDemo());
+  if (!demoDb || !demoDb.contributors) demoDb = seedDemo();   // older saved previews are rebuilt
+  return demoDb;
 }
+export const demoStore = () => db();
+export const demoSave = () => persist();
+export const newId = () => crypto.randomUUID();
 const persist = () => { try { sessionStorage.setItem('atlas-demo-db', JSON.stringify(demoDb)); } catch {} };
 
 // ---------------- public data (no sign-in needed) ----------------
@@ -176,6 +190,11 @@ function liveApi(c, user, session) {
       if (sub) { must(await c.from('push_subscriptions').delete().eq('endpoint', sub.endpoint)); await sub.unsubscribe(); }
     },
     async pushStatus() { const r = await fetch('/.netlify/functions/send-push'); return r.json(); },
+    async wpStatus() { const r = await fetch('/.netlify/functions/wp-sync'); return r.json(); },
+    async wpSync() {
+      const r = await fetch('/.netlify/functions/wp-sync', { method: 'POST', headers: { authorization: 'Bearer ' + session.access_token } });
+      const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Import failed'); return j;
+    },
     // ---- admin / editor ----
     async counts() {
       const o = {};
@@ -270,6 +289,8 @@ function demoApi(user, admin) {
     },
     sendPush: async () => { throw new Error('Push delivery needs the live site with the Netlify function configured.'); },
     pushStatus: async () => { throw new Error('Available on the live site only.'); },
+    wpStatus: async () => { throw new Error('Available on the live site only.'); },
+    wpSync: async () => { throw new Error('Available on the live site only.'); },
     audit: async () => D().audit
   };
 }

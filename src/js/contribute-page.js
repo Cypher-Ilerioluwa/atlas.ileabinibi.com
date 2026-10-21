@@ -2,28 +2,30 @@ import { getContext, loadCommunities, loadArticles, loadEvents, TOPICS, TOPIC_LA
 import { esc } from './search.js';
 import { setDemoRole } from './core.js';
 import { toast } from './shell.js';
+import { setCrumbs } from './core.js';
+setCrumbs([['Home', '/'], ['Contribute']]);
 
 const $ = id => document.getElementById(id), root = $('contrib');
 const params = new URLSearchParams(location.search);
 let ctx, communities = [], type = ['article', 'edit', 'event'].includes(params.get('type')) ? params.get('type') : 'article';
 
 const TYPES = { article: ['Write an article', 'Share research, history, stories, language, food or any topic about a community.'], edit: ['Correct or improve', 'Fix a mistake or add to an existing article or event.'], event: ['Add an event', 'Tell people about something happening in your community.'] };
-const fld = (id, label, ctl, hint = '') => `<div class="fld" id="w-${id}"><label for="${id}">${label}</label>${ctl}${hint ? `<p class="hint">${hint}</p>` : ''}<p class="errmsg" hidden></p></div>`;
+const fld = (id, label, ctl, hint = '', cls = '') => `<div class="fld ${cls}" id="w-${id}"><label for="${id}">${label}</label>${ctl}${hint ? `<p class="hint">${hint}</p>` : ''}<p class="errmsg" hidden></p></div>`;
 const inp = (id, o = '') => `<input id="${id}" name="${id}" type="text" ${o}>`;
 
 function formHtml() {
   const commOpts = `<option value="">Not listed / not sure</option>${communities.map(c => `<option value="${esc(c.id)}" ${c.slug === params.get('community') ? 'selected' : ''}>${esc(c.preferred_name)} (${esc(c.country)})</option>`).join('')}`;
-  const common = fld('community', 'Community (if it is listed)', `<select id="community" name="community">${commOpts}</select>`) +
-    fld('region', 'City, town or exact region this is about *', inp('region', 'required maxlength="160" placeholder="For example: Ìbàdàn, Oyo State, Nigeria"'), 'Required. Be as exact as you can, so editors can place your submission.');
+  const common = fld('community', 'Community (if it is listed)', `<select id="community" name="community">${commOpts}</select>`, '', 'half') +
+    fld('region', 'City, town or exact region this is about *', inp('region', 'required maxlength="160" placeholder="For example: Ìbàdàn, Oyo State, Nigeria"'), 'Required. Be as exact as you can.', 'half');
   const consent = `<div class="fld" id="w-consent"><label class="chk"><input type="checkbox" id="consent"> I wrote this or have the right to share it, and I agree it may be edited and published after review. *</label><p class="errmsg" hidden></p></div>`;
   const files = fld('files', 'Photos or documents (optional)', '<input id="files" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" multiple>', 'Up to 5 files, 10 MB each. Only share what you are allowed to share.');
   let body;
-  if (type === 'article') body = fld('title', 'Title *', inp('title', 'required maxlength="200"')) +
-    fld('topic', 'Topic *', `<select id="topic">${TOPICS.map(t => `<option value="${t}" ${t === params.get('topic') ? 'selected' : ''}>${TOPIC_LABEL[t]}</option>`).join('')}</select>`) +
+  if (type === 'article') body = fld('title', 'Title *', inp('title', 'required maxlength="200"'), '', 'twothird') +
+    fld('topic', 'Topic *', `<select id="topic">${TOPICS.map(t => `<option value="${t}" ${t === params.get('topic') ? 'selected' : ''}>${TOPIC_LABEL[t]}</option>`).join('')}</select>`, '', 'third') +
     fld('summary', 'Short summary', '<textarea id="summary" rows="2" maxlength="400"></textarea>') +
     fld('body', 'Article *', '<textarea id="body" rows="12"></textarea>', 'At least 200 characters. Write what you know and say where it comes from.') +
-    fld('sources', 'Sources', '<textarea id="sources" rows="3"></textarea>', 'People, books, documents or oral accounts this is based on.') +
-    fld('credit', 'Name to credit (optional)', inp('credit', 'maxlength="120"'));
+    fld('sources', 'Sources', '<textarea id="sources" rows="3"></textarea>', 'People, books, documents or oral accounts this is based on.', 'twothird') +
+    fld('credit', 'Name to credit (optional)', inp('credit', 'maxlength="120"'), '', 'third');
   else if (type === 'edit') body = fld('ttype', 'What do you want to correct? *', '<select id="ttype"><option value="article">An article</option><option value="event">An event</option><option value="community">A community page</option><option value="other">Something else</option></select>') +
     `<div id="target-wrap">${fld('target', 'Which one? *', '<select id="target"></select>')}</div>` +
     fld('ptitle', 'New title (only if it should change)', inp('ptitle', 'maxlength="200"')) + fld('psummary', 'New summary (only if it should change)', '<textarea id="psummary" rows="2"></textarea>') +
@@ -31,9 +33,9 @@ function formHtml() {
     fld('reason', 'What is wrong, and how do you know? *', '<textarea id="reason" rows="4"></textarea>', 'Editors use this to check your correction.') +
     fld('sources', 'Sources', '<textarea id="sources" rows="3"></textarea>');
   else body = fld('title', 'Event name *', inp('title', 'required maxlength="200"')) + fld('summary', 'What is it? *', '<textarea id="summary" rows="3" maxlength="600"></textarea>') +
-    fld('body', 'More details', '<textarea id="body" rows="5"></textarea>') + fld('location', 'Venue or place *', inp('location', 'maxlength="200"')) +
-    `<div class="row">${fld('d1', 'Starts *', '<input id="d1" type="date">')}${fld('d2', 'Ends (optional)', '<input id="d2" type="date">')}</div>` + fld('organiser', 'Organiser', inp('organiser', 'maxlength="160"'), 'Do not enter private phone numbers or home addresses.');
-  return `<form id="cform" class="card formcard" novalidate>${common}${body}${files}${consent}<p id="formmsg" role="alert" class="small" style="color:var(--danger)"></p><button class="btn" type="submit" id="send">Submit for review</button></form>`;
+    fld('body', 'More details', '<textarea id="body" rows="5"></textarea>') + fld('location', 'Venue or place *', inp('location', 'maxlength="200"'), '', 'half') +
+    fld('d1', 'Starts *', '<input id="d1" type="date">', '', 'third') + fld('d2', 'Ends (optional)', '<input id="d2" type="date">', '', 'third') + fld('organiser', 'Organiser', inp('organiser', 'maxlength="160"'), 'No private phone numbers or home addresses.', 'third');
+  return `<form id="cform" class="card formcard" novalidate><div class="fgrid">${common}${body}${files}${consent}</div><p id="formmsg" role="alert" class="small" style="color:var(--danger)"></p><button class="btn btn-gold" type="submit" id="send">Submit for review</button></form>`;
 }
 function draw() {
   root.innerHTML = `<div class="typecards" role="group" aria-label="What would you like to do?">${Object.entries(TYPES).map(([k, [t, d]]) => `<button type="button" class="typecard" data-type="${k}" aria-pressed="${type === k}"><b>${t}</b><span class="muted small">${d}</span></button>`).join('')}</div><div id="form-slot">${formHtml()}</div>`;

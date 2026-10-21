@@ -1,6 +1,8 @@
 import { loadCommunities } from './api.js';
 import { matches, esc } from './search.js';
 import { toast } from './shell.js';
+import { setCrumbs } from './core.js';
+setCrumbs([['Home', '/'], ['Map']]);
 
 const EV = { documented: 'Documented', oral_tradition: 'Oral tradition', scholarly_interpretation: 'Scholarly interpretation', disputed: 'Disputed account', community_submitted: 'Community submitted', under_review: 'Under review' };
 const PALETTE = ['#3C2414', '#DCA43C', '#5C3C1C', '#9B6A1E', '#7A4E07', '#B9803A'];

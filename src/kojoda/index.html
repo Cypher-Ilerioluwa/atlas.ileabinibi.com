@@ -1,0 +1,30 @@
+<!--page title="Kọ́jọ́dá calendar: the 364-day Abínibí calendar | Ilẹ̀ Abínibí Atlas" desc="Today's Kọ́jọ́dá date, a 13-month calendar of 28 days, festivals, and a converter between Kọ́jọ́dá and Gregorian dates." nav="kojoda"-->
+<!doctype html>
+<html lang="en">
+<head>
+<!--include:head-->
+</head>
+<body>
+<!--include:header-->
+<main id="main">
+  <div class="wrap kj" id="kj">
+    <section class="kj-hero reveal" id="kj-hero" aria-live="polite"></section>
+    <div class="seg-tabs kj-tabs" role="tablist" aria-label="Calendar views" id="kj-tabs">
+      <button role="tab" type="button" data-tab="kojoda" aria-selected="true">Kọ́jọ́dá</button>
+      <button role="tab" type="button" data-tab="gregorian" aria-selected="false">Gregorian</button>
+      <button role="tab" type="button" data-tab="convert" aria-selected="false">Convert</button>
+      <button role="tab" type="button" data-tab="festivals" aria-selected="false">Festivals</button>
+    </div>
+    <div id="kj-panel"></div>
+    <details class="kj-explain reveal"><summary>How the Kọ́jọ́dá calendar works</summary>
+      <div><p>The year has <b>13 months of 28 days</b>, which is 364 days. Each month has <b>7 weeks of 4 days</b>, so a year has 91 weeks. The first day of the year is <b>3 June</b>.</p>
+      <p>A Gregorian year is one or two days longer than 364. Those extra days are not given numbers: they stay on the last day of the year, as in the original Kọ́jọ́dá app at <a href="https://kojoda.netlify.app/" rel="noopener">kojoda.netlify.app</a>.</p>
+      <p>A cycle is named here by the Gregorian year in which it starts (for example, the cycle that began on 3 June 2026). The original app does not number years.</p></div>
+    </details>
+  </div>
+  <dialog id="dlg" class="kj-sheet"></dialog>
+</main>
+<!--include:footer-->
+<script type="module" src="/js/kojoda-page.js"></script>
+</body>
+</html>

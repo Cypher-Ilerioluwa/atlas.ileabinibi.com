@@ -3,6 +3,8 @@ import { getClient } from '../supabase.js';
 import { isConfigured, demoRole, setDemoRole, labelAccountLink, getTheme, setTheme, fmtDate, fmtDateTime, label } from '../core.js';
 import { esc } from '../search.js';
 import { toast } from '../shell.js';
+import { setCrumbs } from '../core.js';
+setCrumbs([['Home', '/'], ['Account']]);
 
 const root = document.getElementById('acct-root'), $ = id => document.getElementById(id);
 const next = (() => { const n = new URLSearchParams(location.search).get('next') || ''; return /^\/(?!\/)/.test(n) ? n : ''; })();
@@ -28,7 +30,7 @@ function authView(c) {
       <ul class="auth-points"><li><span class="ic">✎</span><div><b>Contribute your knowledge</b>Articles, corrections and events from anywhere.</div></li><li><span class="ic">✓</span><div><b>Follow your submissions</b>See each one as pending, published or needing changes.</div></li><li><span class="ic">◎</span><div><b>Join the conversation</b>Chat, quizzes and news from your community.</div></li></ul>
       <p class="small" style="margin:0">Mapping Our Roots. Connecting Our People.</p></aside>
     <section class="auth-main"><div class="auth-box">
-      ${c.mode === 'none' ? `<div class="alert info setup-card"><b>Sign-in is not connected yet.</b> The site owner still needs to connect Supabase (see the setup guide). Until then you can look around with sample data:<div style="margin-top:.6rem;display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn btn-ghost" id="dm-user" type="button">Preview as member</button><button class="btn btn-ghost" id="dm-admin" type="button">Preview as admin</button></div></div>` : ''}
+      ${c.mode === 'none' ? `<div class="alert info setup-card"><b>Sign-in is not available yet.</b> You can look around with sample data:<div style="margin-top:.6rem;display:flex;gap:.5rem;flex-wrap:wrap"><button class="btn btn-ghost" id="dm-user" type="button">Preview as member</button><button class="btn btn-ghost" id="dm-admin" type="button">Preview as admin</button></div></div>` : ''}
       <div id="view"></div></div></section></div>`;
   $('dm-user')?.addEventListener('click', () => { setDemoRole('user'); location.href = '/account/'; });
   $('dm-admin')?.addEventListener('click', () => { setDemoRole('admin'); location.href = '/account/#admin'; });
@@ -60,7 +62,7 @@ function authView(c) {
     if (!/^\S+@\S+\.\S+$/.test(email)) { msg('err', 'Enter a valid email address.'); return $('em').focus(); }
     if (mode === 'signup' && pw.length < 10) { msg('err', 'Use a password of at least 10 characters.'); return $('pw').focus(); }
     if (mode === 'signin' && !pw) { msg('err', 'Enter your password.'); return $('pw').focus(); }
-    if (!isConfigured()) return msg('info', 'Sign-in is not connected yet, so this cannot run. See the setup guide.');
+    if (!isConfigured()) return msg('info', 'Sign-in is not available yet.');
     const label0 = btn.textContent; btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Please wait…';
     try {
       const db = await getClient();

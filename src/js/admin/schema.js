@@ -60,25 +60,20 @@ export const slugify = s => String(s || '').normalize('NFD').replace(/[\u0300-\u
 
 // Every function the platform is meant to have, and where it stands. Shown in Admin > All functions.
 export const FUNCTIONS = [
-  ['Public', 'Home, Map, Community page per city with topic filters, Events, Contribute', 'Built'],
-  ['Public', 'Map search, region filter, shareable links, list view, tile-failure fallback', 'Built'],
-  ['Community hub', 'Discussion room (Supabase Realtime), quiz, guess the community, proverbs, latest updates', 'Built, live chat untested'],
-  ['Calendar', 'Gregorian calendar (page exists, not in the menu)', 'Built'],
-  ['Calendar', 'Kọ́jọ́dá conversion', 'Waiting for the reference source'],
+  ['Public', 'Home with daily quiz and streak, search suggestions, latest posts, events, topics, install prompt', 'Built'],
+  ['Public', 'Map, community pages with topic filters, Read more, single post pages, all posts', 'Built'],
+  ['Public', 'Library: heritage records, landmarks, people, institutions, organisations', 'Built'],
+  ['Credits', 'Authors and co-editors on every item; contributor pages listing all their work', 'Built'],
+  ['Calendar', 'Kọ́jọ́dá calendar, Gregorian view, converter, festivals; checked against the original code', 'Built and tested'],
+  ['Community hub', 'Chat with replies, reactions, read receipts, typing, online users; quiz, guess game, proverbs', 'Built, live chat needs Supabase'],
   ['Accounts', 'Sign in, create account, forgot and reset password, sign out', 'Built, needs Supabase'],
-  ['Dashboard', 'Overview, Account (name, picture, password), Posts (list/grid/boxed), Notifications, Settings', 'Built, needs Supabase'],
-  ['Dashboard', 'Settings: theme, check for updates, install app, notification and push preferences, delete account', 'Built, push needs setup'],
-  ['Contribute', 'Article, correction and event forms with required location, consent and file uploads', 'Built, needs Supabase'],
-  ['Admin', 'Monitoring overview', 'Built'],
-  ['Admin', 'Submissions: review, feedback, approve (publishes), reject, request changes', 'Built'],
-  ['Admin', 'Users: list, edit name, promote/demote, ban/unban, delete', 'Built'],
-  ['Admin', 'Content: articles, events, communities, heritage, landmarks, people, institutions, organisations, proverbs, quiz', 'Built'],
-  ['Admin', 'Messages: in-app notifications to everyone, editors, contributors or chosen emails', 'Built'],
-  ['Admin', 'Push notifications via Netlify function', 'Built, needs VAPID keys and deploy'],
-  ['Admin', 'Corrections inbox and audit trail', 'Built'],
+  ['Dashboard', 'Overview, Account, Posts, Notifications, Settings, delete account', 'Built, needs Supabase'],
+  ['Contribute', 'Article, correction and event forms with required location, consent and files', 'Built, needs Supabase'],
+  ['Admin', 'Monitoring, submissions, users, content in 10 sections with credits, messages, push, corrections, audit', 'Built'],
+  ['Admin', 'Import from ileabinibi.com by WordPress tags, hourly and on demand', 'Built, needs deploy and tags'],
   ['Admin', 'Duplicate detection and merge; media gallery review', 'Not built'],
-  ['PWA', 'Manifest, offline shell, update check, install button', 'Built, device testing pending'],
+  ['PWA', 'App-style bottom bar, offline shell, update check, install button', 'Built, device testing pending'],
   ['SEO', 'Sitemap, robots, canonical, meta for static pages', 'Built'],
-  ['SEO', 'Static crawlable page per community and article', 'Not built (city pages load by script)'],
-  ['Database', 'Schema, RLS, storage rules, approval and admin functions (6 SQL files)', 'Written, never run']
+  ['SEO', 'Static crawlable page per post and community', 'Not built (pages load by script)'],
+  ['Database', 'Schema, RLS, storage, approval, credits, chat, admin functions (9 SQL files)', 'Written, run in order']
 ];

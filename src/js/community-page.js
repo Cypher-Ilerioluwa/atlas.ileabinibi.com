@@ -1,7 +1,9 @@
-import { getContext, chatApi, loadCommunities, loadQuizRows, loadProverbs, loadArticles, loadEvents, TOPIC_LABEL } from './api.js';
+import { getContext, loadCommunities, loadQuizRows, loadProverbs, loadArticles, loadEvents, TOPIC_LABEL } from './api.js';
 import { esc } from './search.js';
 import { fmtDate, fmtDateTime, isConfigured } from './core.js';
 import { toast } from './shell.js';
+import { mountChat } from './chat-ui.js';
+import { setCrumbs } from './core.js';
 
 const $ = id => document.getElementById(id);
 const panel = $('hub-panel');
@@ -11,31 +13,10 @@ const pick = (arr, n) => shuffle(arr).slice(0, n);
 
 // ---------- discussion room ----------
 async function discuss() {
-  const name = ctx.user ? (ctx.profile?.display_name || ctx.user.email.split('@')[0]) : '';
-  const can = Boolean(ctx.user) && !ctx.banned;
-  panel.innerHTML = `<p class="small muted"><span class="livedot" aria-hidden="true"></span>${isConfigured() ? 'Live: messages appear instantly for everyone.' : 'Demo room: messages stay in this browser tab.'} Be respectful, and keep sacred or private information out of public chat.</p>
-  <div class="chat"><div class="chat-log" id="log" role="log" aria-live="polite" aria-label="Discussion messages"><div class="loading"><span class="spinner"></span> Loading messages…</div></div>
-  ${can ? `<form class="chat-form" id="cf"><label class="visually-hidden" for="cm">Message</label><input id="cm" type="text" maxlength="500" placeholder="Write a message" autocomplete="off" required><button class="btn" type="submit">Send</button></form>`
-    : `<div class="chat-form"><span class="muted">${ctx.banned ? 'Your account cannot post right now.' : 'Sign in to join the conversation.'}</span> ${ctx.banned ? '' : '<a class="btn btn-gold" href="/account/?next=/community/">Sign in / Sign up</a>'}</div>`}</div>`;
-  const log = $('log');
-  const row = m => `<div class="msg ${ctx.user && m.user_id === ctx.user.id ? 'mine' : ''}" data-id="${esc(m.id)}"><small>${esc(m.author_name)} · ${fmtDateTime(m.created_at)}${ctx.user && (m.user_id === ctx.user.id || ctx.isEditor) ? ' <button type="button" data-del="' + esc(m.id) + '">Delete</button>' : ''}</small>${esc(m.body)}</div>`;
-  const stick = () => { log.scrollTop = log.scrollHeight; };
   chat?.close();
-  try {
-    chat = await chatApi(ev => {
-      if (ev.type === 'insert' && !log.querySelector(`[data-id="${CSS.escape(String(ev.row.id))}"]`)) { log.insertAdjacentHTML('beforeend', row(ev.row)); stick(); }
-      if (ev.type === 'delete') log.querySelector(`[data-id="${CSS.escape(String(ev.id))}"]`)?.remove();
-    });
-    const hist = await chat.history();
-    log.innerHTML = hist.length ? hist.map(row).join('') : '<p class="muted">No messages yet. Say hello.</p>'; stick();
-  } catch (e) { log.innerHTML = `<p class="muted">Could not load the discussion: ${esc(e.message)}</p>`; return; }
-  log.onclick = async e => { const b = e.target.closest('[data-del]'); if (b) try { await chat.remove(b.dataset.del); } catch (err) { toast(err.message); } };
-  $('cf')?.addEventListener('submit', async e => {
-    e.preventDefault(); const i = $('cm'), body = i.value.trim(); if (!body) return;
-    i.disabled = true;
-    try { await chat.send({ id: ctx.user.id, name }, body); i.value = ''; if (log.querySelector('p.muted')) log.innerHTML = ''; } catch (err) { toast(err.message, 5000); }
-    i.disabled = false; i.focus();
-  });
+  const rooms = [{ id: 'general', name: 'General' }, ...communities.map(c => ({ id: c.slug, name: c.preferred_name }))];
+  panel.innerHTML = '<div id="chatmount"></div>';
+  chat = await mountChat($('chatmount'), { ctx, rooms, initialRoom: new URLSearchParams(location.search).get('room') || 'general' });
 }
 
 // ---------- quiz ----------
@@ -103,5 +84,6 @@ $('hubtabs').addEventListener('click', e => { const b = e.target.closest('[data-
   try { ctx = await getContext(); } catch { ctx = { user: null }; }
   ctx.user = ctx.user || null;
   try { const r = await loadCommunities(); communities = r.rows; demo = r.demo; } catch {}
+  setCrumbs([['Home', '/'], ['Community']]);
   open(TABS[location.hash.slice(1)] ? location.hash.slice(1) : 'discuss');
 })();

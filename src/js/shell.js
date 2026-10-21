@@ -1,17 +1,7 @@
 // Shared behaviour: mobile menu, service worker, online/offline feedback.
 import { labelAccountLink } from './core.js';
+import './ui.js';
 labelAccountLink();
-const toggle = document.querySelector('.nav-toggle');
-const nav = document.getElementById('site-nav');
-if (toggle && nav) {
-  toggle.addEventListener('click', () => {
-    const open = nav.dataset.open !== 'true';
-    nav.dataset.open = String(open);
-    toggle.setAttribute('aria-expanded', String(open));
-  });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && nav.dataset.open === 'true') { nav.dataset.open = 'false'; toggle.setAttribute('aria-expanded', 'false'); toggle.focus(); } });
-}
-
 const toastEl = document.getElementById('toast');
 let toastTimer;
 export function toast(msg, ms = 3500) {

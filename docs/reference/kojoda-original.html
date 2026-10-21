@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>364 — Yoruba Calendar</title>
+    <style>
+        :root {
+            --bg-deep: #07070a;
+            --bg-surface: #0f0f1a;
+            --bg-elevated: #16162b;
+            --bg-card: #1f1f3a;
+            --bg-hover: #2a2a4a;
+            
+            --text: #f0f0f5;
+            --text-secondary: #b0b0d0;
+            --text-muted: #707090;
+            --text-dim: #505060;
+            
+            --border: rgba(255, 255, 255, 0.05);
+            --shadow: 0 8px 32px rgba(0,0,0,0.4);
+            
+            --radius: 0.625rem;
+            --radius-lg: 1rem;
+            
+            --fest-ifa: #f59e0b;
+            --fest-osun: #10b981;
+            --fest-ogun: #64748b;
+            --fest-sango: #ef4444;
+            --fest-egungun: #d946ef;
+            --fest-yam: #84cc16;
+            --fest-oya: #a855f7;
+            --fest-obatala: #e2e8f0;
+            --fest-olokun: #3b82f6;
+            --fest-oduduwa: #f97316;
+            --fest-general: #eab308;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            height: 100dvh;
+            width: 100vw;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            touch-action: manipulation;
+        }
+
+        .app {
+            height: 100dvh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ===== HEADER ===== */
+        .app-header {
+            flex-shrink: 0;
+            padding: 0.5rem 1rem 0.375rem;
+            background: linear-gradient(180deg, rgba(15,15,26,0.98) 0%, rgba(15,15,26,0.9) 100%);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .brand-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 0.5rem;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: white;
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+
+        .brand-title {
+            font-size: 0.9rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-subtitle {
+            font-size: 0.55rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 700;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.4rem;
+        }
+
+        .icon-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 0.5rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 150ms;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .icon-btn:active {
+            transform: scale(0.9);
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+        }
+
+        .month-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 150ms;
+            font-weight: 300;
+        }
+
+        .nav-btn:active {
+            transform: scale(0.88);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        .month-info {
+            text-align: center;
+            flex: 1;
+            cursor: pointer;
+            user-select: none;
+            padding: 0.2rem;
+        }
+
+        .month-title {
+            font-size: clamp(1rem, 4vw, 1.3rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            line-height: 1;
+            background: linear-gradient(135deg, var(--text), var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .month-meta {
+            font-size: clamp(0.55rem, 2vw, 0.7rem);
+            color: var(--accent-primary);
+            font-weight: 700;
+            margin-top: 0.05rem;
+            letter-spacing: 0.05em;
+        }
+
+        /* ===== STATS BAR ===== */
+        .stats-bar {
+            flex-shrink: 0;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.375rem;
+            padding: 0.375rem 1rem;
+            background: rgba(7,7,10,0.8);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stat {
+            text-align: center;
+            padding: 0.375rem 0.25rem;
+            border-radius: 0.5rem;
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            transition: all 150ms;
+        }
+
+        .stat:active {
+            transform: scale(0.95);
+            background: var(--bg-elevated);
+        }
+
+        .stat-value {
+            font-size: clamp(0.85rem, 3vw, 1.1rem);
+            font-weight: 800;
+            color: var(--text);
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .stat-label {
+            font-size: clamp(0.5rem, 1.5vw, 0.65rem);
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 700;
+            margin-top: 0.1rem;
+        }
+
+        /* ===== LEGEND ===== */
+        .legend-bar {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.25rem 1rem;
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .legend-bar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: clamp(0.5rem, 1.5vw, 0.65rem);
+            color: var(--text-muted);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .legend-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* ===== CALENDAR ===== */
+        .calendar-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            padding: 0 0.75rem 0.375rem;
+        }
+
+        .weekday-row {
+            flex-shrink: 0;
+            display: grid;
+            grid-template-columns: clamp(1.5rem, 6vw, 2.25rem) repeat(4, 1fr);
+            gap: 0.375rem;
+            padding: 0.375rem 0;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+        }
+
+        .weekday {
+            text-align: center;
+            font-size: clamp(0.55rem, 1.8vw, 0.75rem);
+            color: var(--text-dim);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .calendar-grid {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            min-height: 0;
+            padding-top: 0.25rem;
+        }
+
+        .week-row {
+            flex: 1;
+            display: flex;
+            gap: 0.375rem;
+            min-height: 0;
+        }
+
+        .week-num {
+            width: clamp(1.5rem, 6vw, 2.25rem);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(0.5rem, 1.5vw, 0.65rem);
+            color: var(--text-dim);
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            border-radius: 0.375rem;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .day-cell {
+            flex: 1;
+            min-width: 0;
+            border-radius: clamp(0.375rem, 1.5vw, 0.75rem);
+            background: var(--bg-surface);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 150ms;
+            position: relative;
+            border: 1.5px solid transparent;
+            overflow: hidden;
+            gap: 0.15rem;
+        }
+
+        .day-cell::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--accent-glow) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 150ms;
+        }
+
+        .day-cell:active {
+            transform: scale(0.93);
+            border-color: rgba(255,255,255,0.1);
+        }
+
+        .day-cell:active::before {
+            opacity: 0.25;
+        }
+
+        .day-cell.today {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            box-shadow: 0 0 16px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.25);
+            animation: pulse-soft 2.5s ease-in-out infinite;
+        }
+
+        .day-cell.today .day-number {
+            color: white;
+            font-weight: 900;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .day-cell.selected {
+            border-color: var(--accent-primary);
+            background: var(--bg-elevated);
+            box-shadow: 0 0 0 1px var(--accent-primary), 0 0 16px var(--accent-glow);
+        }
+
+        .day-cell.selected .day-number {
+            color: var(--accent-primary);
+            font-weight: 800;
+        }
+
+        .day-number {
+            font-size: clamp(0.85rem, 3.5vw, 1.3rem);
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1;
+            z-index: 1;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .day-indicator {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            box-shadow: 0 0 4px var(--accent-glow);
+            z-index: 2;
+        }
+
+        .day-cell.today .day-indicator {
+            background: white;
+            box-shadow: 0 0 6px rgba(255,255,255,0.5);
+        }
+
+        .fest-indicator {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            z-index: 2;
+            flex-shrink: 0;
+            box-shadow: 0 0 4px currentColor;
+        }
+
+        /* ===== FULL SCREEN DETAIL ===== */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 300ms;
+            z-index: 100;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .detail-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 110;
+            background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-deep) 100%);
+            display: flex;
+            flex-direction: column;
+            padding: 0.75rem 1rem 1rem;
+            transform: translateY(100%);
+            transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .detail-screen.open {
+            transform: translateY(0);
+        }
+
+        .detail-header {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-title-group {
+            flex: 1;
+        }
+
+        .detail-title {
+            font-size: clamp(1.2rem, 5vw, 1.8rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1;
+            background: linear-gradient(135deg, var(--text), var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .detail-subtitle {
+            font-size: clamp(0.65rem, 2.5vw, 0.9rem);
+            color: var(--accent-primary);
+            margin-top: 0.15rem;
+            font-weight: 600;
+        }
+
+        .detail-close {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            cursor: pointer;
+            transition: all 150ms;
+        }
+
+        .detail-close:active {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            transform: scale(0.9);
+        }
+
+        .progress-area {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            gap: clamp(1.5rem, 6vw, 3rem);
+            padding: 0.375rem 0;
+        }
+
+        .progress-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .progress-ring {
+            position: relative;
+            width: clamp(55px, 16vw, 85px);
+            height: clamp(55px, 16vw, 85px);
+        }
+
+        .progress-ring svg {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .progress-ring-bg {
+            fill: none;
+            stroke: var(--bg-card);
+            stroke-width: 5;
+        }
+
+        .progress-ring-fill {
+            fill: none;
+            stroke: url(#progressGradient);
+            stroke-width: 5;
+            stroke-linecap: round;
+            stroke-dasharray: 220;
+            stroke-dashoffset: 220;
+            transition: stroke-dashoffset 600ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .progress-text {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(0.85rem, 3vw, 1.1rem);
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .progress-label {
+            font-size: clamp(0.55rem, 1.8vw, 0.7rem);
+            color: var(--text-muted);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .detail-cards {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            gap: 0.375rem;
+            min-height: 0;
+            margin-top: 0.25rem;
+            overflow-y: auto;
+        }
+
+        .detail-cards::-webkit-scrollbar {
+            display: none;
+        }
+
+        .info-card {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: var(--bg-surface);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            transition: all 150ms;
+            gap: 0.875rem;
+        }
+
+        .info-card:active {
+            transform: translateX(4px);
+            background: var(--bg-elevated);
+        }
+
+        .info-icon {
+            width: clamp(28px, 8vw, 40px);
+            height: clamp(28px, 8vw, 40px);
+            border-radius: 0.5rem;
+            background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1));
+            color: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(0.8rem, 2.5vw, 1.1rem);
+            flex-shrink: 0;
+        }
+
+        .info-text {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .info-label {
+            font-size: clamp(0.55rem, 1.8vw, 0.7rem);
+            color: var(--text-dim);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .info-value {
+            font-size: clamp(0.8rem, 2.8vw, 1rem);
+            font-weight: 700;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .info-value.highlight {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .fest-card {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            gap: 0.875rem;
+            animation: slideIn 300ms ease-out;
+        }
+
+        .fest-card.ifa {
+            background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.05));
+            border-color: rgba(245,158,11,0.2);
+        }
+
+        .fest-card.osun {
+            background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05));
+            border-color: rgba(16,185,129,0.2);
+        }
+
+        .fest-card.ogun {
+            background: linear-gradient(135deg, rgba(100,116,139,0.1), rgba(100,116,139,0.05));
+            border-color: rgba(100,116,139,0.2);
+        }
+
+        .fest-card.sango {
+            background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(239,68,68,0.05));
+            border-color: rgba(239,68,68,0.2);
+        }
+
+        .fest-card.egungun {
+            background: linear-gradient(135deg, rgba(217,70,239,0.1), rgba(217,70,239,0.05));
+            border-color: rgba(217,70,239,0.2);
+        }
+
+        .fest-card.yam {
+            background: linear-gradient(135deg, rgba(132,204,22,0.1), rgba(132,204,22,0.05));
+            border-color: rgba(132,204,22,0.2);
+        }
+
+        .fest-card.oya {
+            background: linear-gradient(135deg, rgba(168,85,247,0.1), rgba(168,85,247,0.05));
+            border-color: rgba(168,85,247,0.2);
+        }
+
+        .fest-card.obatala {
+            background: linear-gradient(135deg, rgba(226,232,240,0.1), rgba(226,232,240,0.05));
+            border-color: rgba(226,232,240,0.2);
+        }
+
+        .fest-card.olokun {
+            background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(59,130,246,0.05));
+            border-color: rgba(59,130,246,0.2);
+        }
+
+        .fest-card.oduduwa {
+            background: linear-gradient(135deg, rgba(249,115,22,0.1), rgba(249,115,22,0.05));
+            border-color: rgba(249,115,22,0.2);
+        }
+
+        .fest-icon {
+            width: clamp(28px, 8vw, 40px);
+            height: clamp(28px, 8vw, 40px);
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(0.8rem, 2.5vw, 1.1rem);
+            flex-shrink: 0;
+        }
+
+        .fest-card.ifa .fest-icon {
+            background: rgba(245,158,11,0.15);
+            color: var(--fest-ifa);
+        }
+
+        .fest-card.osun .fest-icon {
+            background: rgba(16,185,129,0.15);
+            color: var(--fest-osun);
+        }
+
+        .fest-card.ogun .fest-icon {
+            background: rgba(100,116,139,0.15);
+            color: var(--fest-ogun);
+        }
+
+        .fest-card.sango .fest-icon {
+            background: rgba(239,68,68,0.15);
+            color: var(--fest-sango);
+        }
+
+        .fest-card.egungun .fest-icon {
+            background: rgba(217,70,239,0.15);
+            color: var(--fest-egungun);
+        }
+
+        .fest-card.yam .fest-icon {
+            background: rgba(132,204,22,0.15);
+            color: var(--fest-yam);
+        }
+
+        .fest-card.oya .fest-icon {
+            background: rgba(168,85,247,0.15);
+            color: var(--fest-oya);
+        }
+
+        .fest-card.obatala .fest-icon {
+            background: rgba(226,232,240,0.15);
+            color: var(--fest-obatala);
+        }
+
+        .fest-card.olokun .fest-icon {
+            background: rgba(59,130,246,0.15);
+            color: var(--fest-olokun);
+        }
+
+        .fest-card.oduduwa .fest-icon {
+            background: rgba(249,115,22,0.15);
+            color: var(--fest-oduduwa);
+        }
+
+        .fest-text {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .fest-name {
+            font-size: clamp(0.8rem, 2.8vw, 1rem);
+            font-weight: 700;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .fest-desc {
+            font-size: clamp(0.55rem, 1.8vw, 0.75rem);
+            color: var(--text-muted);
+            margin-top: 0.1rem;
+        }
+
+        /* ===== MONTH PICKER ===== */
+        .picker-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 120;
+            background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-deep) 100%);
+            display: flex;
+            flex-direction: column;
+            padding: 0.75rem 1rem 1rem;
+            transform: translateY(100%);
+            transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .picker-screen.open {
+            transform: translateY(0);
+        }
+
+        .picker-header {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .picker-title {
+            font-size: clamp(1.1rem, 4vw, 1.4rem);
+            font-weight: 800;
+        }
+
+        .picker-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 0.5rem;
+            min-height: 0;
+        }
+
+        .month-option {
+            background: var(--bg-surface);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 150ms;
+            position: relative;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .month-option::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--accent-glow) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 150ms;
+        }
+
+        .month-option:active {
+            transform: scale(0.95);
+        }
+
+        .month-option:active::before {
+            opacity: 0.3;
+        }
+
+        .month-option.active {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-color: transparent;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .month-option.active .month-option-name,
+        .month-option.active .month-option-season {
+            color: white;
+        }
+
+        .month-option-name {
+            font-size: clamp(0.9rem, 3vw, 1.2rem);
+            font-weight: 800;
+            color: var(--text);
+            position: relative;
+            z-index: 1;
+        }
+
+        .month-option-season {
+            font-size: clamp(0.55rem, 1.8vw, 0.75rem);
+            color: var(--text-dim);
+            margin-top: 0.15rem;
+            position: relative;
+            z-index: 1;
+            font-weight: 600;
+        }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            padding: 0.625rem 1.25rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 800;
+            flex-shrink: 0;
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        /* ===== ANIMATIONS ===== */
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-12px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes pulse-soft {
+            0%, 100% { box-shadow: 0 0 16px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.2); }
+            50% { box-shadow: 0 0 28px var(--accent-glow), 0 0 48px var(--accent-glow-2), inset 0 1px 0 rgba(255,255,255,0.2); }
+        }
+
+        .animate-slide-left {
+            animation: slideInLeft 300ms ease-out;
+        }
+
+        @media (max-height: 500px) and (orientation: landscape) {
+            .app-header { padding: 0.35rem 1rem 0.2rem; }
+            .stats-bar { padding: 0.25rem 1rem; }
+            .legend-bar { padding: 0.2rem 1rem; }
+            .calendar-area { padding: 0 0.75rem 0.25rem; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * { animation: none !important; transition-duration: 50ms !important; }
+        }
+    </style>
+</head>
+<body>
+    <svg width="0" height="0" style="position:absolute">
+        <defs>
+            <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:var(--accent-primary)" />
+                <stop offset="100%" style="stop-color:var(--accent-secondary)" />
+            </linearGradient>
+        </defs>
+    </svg>
+
+    <div class="app">
+        <header class="app-header">
+            <div class="header-top">
+                <div class="brand">
+                    <div class="brand-icon">◈</div>
+                    <div class="brand-text">
+                        <div class="brand-title">364</div>
+                        <div class="brand-subtitle">Yoruba Calendar</div>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn" onclick="goToToday()" aria-label="Today">◉</button>
+                    <button class="icon-btn" onclick="openPicker()" aria-label="Months">⊞</button>
+                </div>
+            </div>
+            <div class="month-nav">
+                <button class="nav-btn" onclick="prevMonth()" aria-label="Previous">‹</button>
+                <div class="month-info" onclick="openPicker()">
+                    <div class="month-title" id="monthTitle">Month 1</div>
+                    <div class="month-meta" id="monthMeta">Òkúdù • The Source</div>
+                </div>
+                <button class="nav-btn" onclick="nextMonth()" aria-label="Next">›</button>
+            </div>
+        </header>
+
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-value" id="statDay">1</div>
+                <div class="stat-label">Day</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="statWeek">1</div>
+                <div class="stat-label">Week</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="statWeekDay">1</div>
+                <div class="stat-label">Weekday</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="statQuarter">Q1</div>
+                <div class="stat-label">Quarter</div>
+            </div>
+        </div>
+
+        <div class="legend-bar" id="legendBar">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--fest-ifa)"></div>Ifa</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--fest-osun)"></div>Osun</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--fest-ogun)"></div>Ogun</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--fest-sango)"></div>Sango</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--fest-egungun)"></div>Egungun</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--fest-yam)"></div>Harvest</div>
+        </div>
+
+        <div class="calendar-area">
+            <div class="weekday-row">
+                <div></div>
+                <div class="weekday">One</div>
+                <div class="weekday">Two</div>
+                <div class="weekday">Three</div>
+                <div class="weekday">Four</div>
+            </div>
+            <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay" onclick="closeDetail()"></div>
+
+    <div class="detail-screen" id="detailScreen">
+        <div class="detail-header">
+            <div class="detail-title-group">
+                <div class="detail-title" id="detailTitle">Day 1</div>
+                <div class="detail-subtitle" id="detailSubtitle">Month 1, Week 1</div>
+            </div>
+            <button class="detail-close" onclick="closeDetail()" aria-label="Close">×</button>
+        </div>
+        
+        <div class="progress-area">
+            <div class="progress-item">
+                <div class="progress-ring">
+                    <svg viewBox="0 0 80 80">
+                        <circle class="progress-ring-bg" cx="40" cy="40" r="35"/>
+                        <circle class="progress-ring-fill" id="yearRing" cx="40" cy="40" r="35"/>
+                    </svg>
+                    <div class="progress-text" id="yearPercent">0%</div>
+                </div>
+                <div class="progress-label">Year</div>
+            </div>
+            <div class="progress-item">
+                <div class="progress-ring">
+                    <svg viewBox="0 0 80 80">
+                        <circle class="progress-ring-bg" cx="40" cy="40" r="35"/>
+                        <circle class="progress-ring-fill" id="monthRing" cx="40" cy="40" r="35"/>
+                    </svg>
+                    <div class="progress-text" id="monthPercent">0%</div>
+                </div>
+                <div class="progress-label">Month</div>
+            </div>
+        </div>
+
+        <div class="detail-cards" id="detailCards"></div>
+    </div>
+
+    <div class="picker-screen" id="pickerScreen">
+        <div class="picker-header">
+            <div class="picker-title">Select Month</div>
+            <button class="detail-close" onclick="closePicker()" aria-label="Close">×</button>
+        </div>
+        <div class="picker-grid" id="pickerGrid"></div>
+    </div>
+
+    <div class="toast" id="toast">
+        <div class="toast-icon">✦</div>
+        <span id="toastText">Notification</span>
+    </div>
+
+    <script>
+        const CONFIG = {
+            daysPerMonth: 28,
+            daysPerWeek: 4,
+            weeksPerMonth: 7,
+            monthsPerYear: 13,
+            totalDays: 364
+        };
+
+        const THEMES = [
+            { name: 'Òkúdù', yoruba: 'Òkúdù', primary: '#6366f1', secondary: '#8b5cf6', glow: 'rgba(99,102,241,0.4)', glow2: 'rgba(139,92,246,0.2)', season: 'The Source' },
+            { name: 'Agẹmo', yoruba: 'Agẹmo', primary: '#06b6d4', secondary: '#3b82f6', glow: 'rgba(6,182,212,0.4)', glow2: 'rgba(59,130,246,0.2)', season: 'The Messenger' },
+            { name: 'Ògún', yoruba: 'Ògún', primary: '#10b981', secondary: '#06b6d4', glow: 'rgba(16,185,129,0.4)', glow2: 'rgba(6,182,212,0.2)', season: 'The Forge' },
+            { name: 'Ọwẹ́wẹ̀', yoruba: 'Ọwẹ́wẹ̀', primary: '#22c55e', secondary: '#10b981', glow: 'rgba(34,197,94,0.4)', glow2: 'rgba(16,185,129,0.2)', season: 'The Harvest' },
+            { name: 'Ọ̀wàrà', yoruba: 'Ọ̀wàrà', primary: '#84cc16', secondary: '#22c55e', glow: 'rgba(132,204,22,0.4)', glow2: 'rgba(34,197,94,0.2)', season: 'The Storm' },
+            { name: 'Bélú', yoruba: 'Bélú', primary: '#eab308', secondary: '#84cc16', glow: 'rgba(234,179,8,0.4)', glow2: 'rgba(132,204,22,0.2)', season: 'The Gathering' },
+            { name: 'Ọ̀pẹ', yoruba: 'Ọ̀pẹ', primary: '#f59e0b', secondary: '#eab308', glow: 'rgba(245,158,11,0.4)', glow2: 'rgba(234,179,8,0.2)', season: 'The Palm' },
+            { name: 'Ṣẹrẹ', yoruba: 'Ṣẹrẹ', primary: '#f97316', secondary: '#f59e0b', glow: 'rgba(249,115,22,0.4)', glow2: 'rgba(245,158,11,0.2)', season: 'The White Cloth' },
+            { name: 'Èrèlé', yoruba: 'Èrèlé', primary: '#ef4444', secondary: '#f97316', glow: 'rgba(239,68,68,0.4)', glow2: 'rgba(249,115,22,0.2)', season: 'The Deep' },
+            { name: 'Ẹrẹ́nà', yoruba: 'Ẹrẹ́nà', primary: '#ec4899', secondary: '#ef4444', glow: 'rgba(236,72,153,0.4)', glow2: 'rgba(239,68,68,0.2)', season: 'The Ancient' },
+            { name: 'Igbe', yoruba: 'Igbe', primary: '#d946ef', secondary: '#ec4899', glow: 'rgba(217,70,239,0.4)', glow2: 'rgba(236,72,153,0.2)', season: 'The Proclamation' },
+            { name: 'Èbìbì', yoruba: 'Èbìbì', primary: '#a855f7', secondary: '#d946ef', glow: 'rgba(168,85,247,0.4)', glow2: 'rgba(217,70,239,0.2)', season: 'The Mask' },
+            { name: 'Ìrànlọ́wọ́', yoruba: 'Ìrànlọ́wọ́', primary: '#8b5cf6', secondary: '#6366f1', glow: 'rgba(139,92,246,0.4)', glow2: 'rgba(99,102,241,0.2)', season: 'The Preparation' }
+        ];
+
+        const QUARTERS = ['Q1','Q1','Q1','Q2','Q2','Q2','Q3','Q3','Q3','Q4','Q4','Q4','Q4'];
+
+        // ===== FESTIVAL DATABASE (364-Day System) =====
+        // Day 0 = June 3 (Gregorian anchor)
+        const FESTIVALS = {
+            // MONTH 1: Òkúdù (Days 1-28) ~ June 3 - June 30
+            0: { name: 'Odun Tuntun', desc: 'Yoruba New Year & Ifa Festival', type: 'ifa', icon: '✦' },
+            1: { name: 'Ijawe Ifa', desc: 'Leaf-picking for the Oracle', type: 'ifa', icon: '✦' },
+            2: { name: 'Arisun Idana', desc: 'Culinary vigil at the Palace', type: 'ifa', icon: '✦' },
+            3: { name: 'Bibo Ifa', desc: 'Sacrifice for the Ooni\'s Oracle', type: 'ifa', icon: '✦' },
+            7: { name: 'Awo Oloju', desc: 'Sixteen-Faced Cult rites', type: 'ifa', icon: '✦' },
+            14: { name: 'Iwure', desc: 'Blessings by Araba Agbaye', type: 'ifa', icon: '✦' },
+            17: { name: 'Yemoja', desc: 'Mother of the Orisa, fertility & water', type: 'osun', icon: '≈' },
+            18: { name: 'Yemoja', desc: 'Annual rites of passage for women', type: 'osun', icon: '≈' },
+            19: { name: 'Yemoja', desc: 'Sacred river offerings', type: 'osun', icon: '≈' },
+            20: { name: 'Yemoja', desc: 'Community water blessings', type: 'osun', icon: '≈' },
+            23: { name: 'Sopona', desc: 'Orisa of healing & smallpox', type: 'general', icon: '◉' },
+            24: { name: 'Osanyin', desc: 'Plants, magic & medicine', type: 'general', icon: '◉' },
+            
+            // MONTH 2: Agẹmo (Days 29-56) ~ July 1 - July 28
+            28: { name: 'Agẹmo Festival', desc: 'Ijebu sacred festival begins', type: 'general', icon: '◈' },
+            29: { name: 'Agẹmo', desc: 'Sacred messenger rites continue', type: 'general', icon: '◈' },
+            34: { name: 'Esu Elegba', desc: 'Divine messenger & crossroads', type: 'general', icon: '◉' },
+            41: { name: 'Oko Festival', desc: 'Agriculture & harvest thanksgiving', type: 'yam', icon: '✻' },
+            48: { name: 'Oko', desc: 'Farm blessings & planting rituals', type: 'yam', icon: '✻' },
+            
+            // MONTH 3: Ògún (Days 57-84) ~ July 29 - Aug 25
+            56: { name: 'Ogun Festival', desc: 'Orisa of iron, war & truth', type: 'ogun', icon: '⚔' },
+            57: { name: 'Ogun', desc: 'Blacksmiths & warriors honored', type: 'ogun', icon: '⚔' },
+            58: { name: 'Ogun', desc: 'Legal profession oath renewal', type: 'ogun', icon: '⚔' },
+            63: { name: 'Osun-Osogbo', desc: 'River goddess of fertility', type: 'osun', icon: '≈' },
+            64: { name: 'Osun', desc: 'Sacred calabash procession', type: 'osun', icon: '≈' },
+            65: { name: 'Osun', desc: 'Arugba virgin bearer rites', type: 'osun', icon: '≈' },
+            70: { name: 'Sango Festival', desc: 'Thunder, lightning & justice', type: 'sango', icon: '⚡' },
+            71: { name: 'Sango', desc: 'Drumming & battle reenactments', type: 'sango', icon: '⚡' },
+            72: { name: 'Sango', desc: 'Fire rituals & energy blessings', type: 'sango', icon: '⚡' },
+            77: { name: 'Agbado', desc: 'Corn harvest celebration', type: 'yam', icon: '✻' },
+            78: { name: 'Agbado', desc: 'Gratitude for bounty', type: 'yam', icon: '✻' },
+            
+            // MONTH 4: Ọwẹ́wẹ̀ (Days 85-112) ~ Aug 26 - Sep 22
+            84: { name: 'Iriji-Mmanu', desc: 'New Yam Festival begins', type: 'yam', icon: '✻' },
+            85: { name: 'New Yam', desc: 'First yam to elders & chief', type: 'yam', icon: '✻' },
+            86: { name: 'New Yam', desc: 'Community feasting & dances', type: 'yam', icon: '✻' },
+            91: { name: 'Mama Osun', desc: 'Day of the river goddess', type: 'osun', icon: '≈' },
+            98: { name: 'Olojo Festival', desc: 'Day of the First Dawn', type: 'ifa', icon: '✦' },
+            99: { name: 'Olojo', desc: 'Ooni emerges from seclusion', type: 'ifa', icon: '✦' },
+            100: { name: 'Olojo', desc: 'Are Crown procession', type: 'ifa', icon: '✦' },
+            101: { name: 'Olojo', desc: 'Okemogun shrine rituals', type: 'ifa', icon: '✦' },
+            102: { name: 'Olojo', desc: 'Divination for the coming year', type: 'ifa', icon: '✦' },
+            105: { name: 'Itapa', desc: 'Sacred grove ceremonies', type: 'general', icon: '◉' },
+            
+            // MONTH 5: Ọ̀wàrà (Days 113-140) ~ Sep 23 - Oct 20
+            112: { name: 'Oya Festival', desc: 'Orisa of winds & change', type: 'oya', icon: '☁' },
+            113: { name: 'Oya', desc: 'Guardian of the gateway', type: 'oya', icon: '☁' },
+            114: { name: 'Oya', desc: 'Market women honored', type: 'oya', icon: '☁' },
+            119: { name: 'Olojo Finale', desc: 'Closing blessings & prayers', type: 'ifa', icon: '✦' },
+            126: { name: 'Sigidi', desc: 'Unsettled spirits & ancestors', type: 'egungun', icon: '◐' },
+            133: { name: 'Dry Season', desc: 'Onset of Harmattan winds', type: 'general', icon: '◉' },
+            
+            // MONTH 6: Bélú (Days 141-168) ~ Oct 21 - Nov 17
+            140: { name: 'Eyo Festival', desc: 'Lagos masquerade for Obas', type: 'egungun', icon: '◐' },
+            141: { name: 'Eyo', desc: 'White-clad spirit procession', type: 'egungun', icon: '◐' },
+            142: { name: 'Eyo', desc: 'Opa candles & sacred rites', type: 'egungun', icon: '◐' },
+            147: { name: 'Ancestral Veneration', desc: 'Community founder honors', type: 'egungun', icon: '◐' },
+            154: { name: 'Cleansing', desc: 'Town purification rituals', type: 'general', icon: '◉' },
+            
+            // MONTH 7: Ọ̀pẹ (Days 169-196) ~ Nov 18 - Dec 15
+            168: { name: 'Obaluaye', desc: 'Orisa of disease & healing', type: 'general', icon: '◉' },
+            169: { name: 'Sopona', desc: 'Smallpox deity rites', type: 'general', icon: '◉' },
+            175: { name: 'Harmattan', desc: 'Dry season winds arrive', type: 'general', icon: '◉' },
+            182: { name: 'Healing', desc: 'Medicine & herbal rites', type: 'general', icon: '◉' },
+            189: { name: 'Orisa Oko', desc: 'Final harvest thanksgiving', type: 'yam', icon: '✻' },
+            
+            // MONTH 8: Ṣẹrẹ (Days 197-224) ~ Dec 16 - Jan 12
+            196: { name: 'Obatala', desc: 'Orisa of creation & purity', type: 'obatala', icon: '◊' },
+            197: { name: 'Obatala', desc: 'White cloth & calmness', type: 'obatala', icon: '◊' },
+            203: { name: 'Ita Obatala', desc: 'Divination for the elders', type: 'obatala', icon: '◊' },
+            210: { name: 'New Moon', desc: 'Sacred lunar rites', type: 'general', icon: '◉' },
+            217: { name: 'Egungun Prelim', desc: 'Ancestor mask preparations', type: 'egungun', icon: '◐' },
+            
+            // MONTH 9: Èrèlé (Days 225-252) ~ Jan 13 - Feb 9
+            224: { name: 'Olokun', desc: 'Orisa of deep seas & wealth', type: 'olokun', icon: '≋' },
+            225: { name: 'Olokun', desc: 'Sailors & lost souls honored', type: 'olokun', icon: '≋' },
+            231: { name: 'Olokun', desc: 'Underwater realm communion', type: 'olokun', icon: '≋' },
+            238: { name: 'Gelede', desc: 'Motherhood & female power', type: 'general', icon: '◈' },
+            239: { name: 'Gelede', desc: 'Masked dance ceremonies', type: 'general', icon: '◈' },
+            245: { name: 'Iyami', desc: 'Night of the powerful mothers', type: 'general', icon: '◉' },
+            
+            // MONTH 10: Ẹrẹ́nà (Days 253-280) ~ Feb 10 - Mar 9
+            252: { name: 'Oduduwa', desc: 'Progenitor of the Yoruba', type: 'oduduwa', icon: '◉' },
+            253: { name: 'Oduduwa', desc: 'Ile-Ife creation rites', type: 'oduduwa', icon: '◉' },
+            254: { name: 'Iyaagbe', desc: 'Earth mother ceremonies', type: 'oduduwa', icon: '◉' },
+            261: { name: 'Rites of Passage', desc: 'Annual male initiation', type: 'general', icon: '◉' },
+            268: { name: 'Ososi', desc: 'Orisa of adventure & hunt', type: 'general', icon: '◉' },
+            273: { name: 'Oduduwa', desc: 'Sacred grove offerings', type: 'oduduwa', icon: '◉' },
+            274: { name: 'Oduduwa', desc: 'Community lineage blessings', type: 'oduduwa', icon: '◉' },
+            
+            // MONTH 11: Igbe (Days 281-308) ~ Mar 10 - Apr 6
+            280: { name: 'Rainy Season', desc: 'Onset of spring rains', type: 'general', icon: '◉' },
+            281: { name: 'Rain Invocation', desc: 'Prayers for crops', type: 'general', icon: '◉' },
+            287: { name: 'Oke Itase', desc: 'Sacred hill ceremonies', type: 'general', icon: '◉' },
+            294: { name: 'Ifa Divination', desc: 'Year-ahead prophecy', type: 'ifa', icon: '✦' },
+            301: { name: 'Igbe', desc: 'Proclamation of the season', type: 'general', icon: '◉' },
+            
+            // MONTH 12: Èbìbì (Days 309-336) ~ Apr 7 - May 4
+            308: { name: 'Egungun Festival', desc: 'Commemoration of ancestors', type: 'egungun', icon: '◐' },
+            309: { name: 'Egungun', desc: 'Ijebu mask ceremonies', type: 'egungun', icon: '◐' },
+            310: { name: 'Egungun', desc: 'Community ancestor parade', type: 'egungun', icon: '◐' },
+            315: { name: 'Ijebu Ebìbì', desc: 'Sacred town celebrations', type: 'egungun', icon: '◐' },
+            322: { name: 'Ancestor Night', desc: 'Illustrious dead honored', type: 'egungun', icon: '◐' },
+            329: { name: 'Founders Day', desc: 'Community founders remembered', type: 'egungun', icon: '◐' },
+            
+            // MONTH 13: Ìrànlọ́wọ́ (Days 337-363) ~ May 5 - June 1
+            336: { name: 'Ogun Rites', desc: 'Preparation for new year', type: 'ogun', icon: '⚔' },
+            337: { name: 'Orisa Oko', desc: 'Planting blessings', type: 'yam', icon: '✻' },
+            343: { name: 'Ifa Consultation', desc: 'Divination for coming year', type: 'ifa', icon: '✦' },
+            350: { name: 'Purification', desc: 'Cleansing before new year', type: 'general', icon: '◉' },
+            357: { name: 'Eve of New Year', desc: 'Final day of the cycle', type: 'ifa', icon: '✦' },
+            363: { name: 'Odun Mimo', desc: 'Sacred night vigil', type: 'ifa', icon: '✦' }
+        };
+
+        const TYPE_COLORS = {
+            ifa: 'var(--fest-ifa)',
+            osun: 'var(--fest-osun)',
+            ogun: 'var(--fest-ogun)',
+            sango: 'var(--fest-sango)',
+            egungun: 'var(--fest-egungun)',
+            yam: 'var(--fest-yam)',
+            oya: 'var(--fest-oya)',
+            obatala: 'var(--fest-obatala)',
+            olokun: 'var(--fest-olokun)',
+            oduduwa: 'var(--fest-oduduwa)',
+            general: 'var(--fest-general)'
+        };
+
+        let currentMonth = 0;
+        let selectedDay = null;
+        let isAnimating = false;
+
+        function getAnchorDate(year) {
+            return new Date(year, 5, 3);
+        }
+
+        function getTodayDayOfYear() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            let anchor = getAnchorDate(currentYear);
+            if (now < anchor) anchor = getAnchorDate(currentYear - 1);
+            const diffDays = Math.floor((now - anchor) / (1000 * 60 * 60 * 24));
+            return Math.max(0, Math.min(363, diffDays));
+        }
+
+        let todayDayOfYear = getTodayDayOfYear();
+
+        function getGregorianDate(doy) {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            let anchor = getAnchorDate(currentYear);
+            if (now < anchor) anchor = getAnchorDate(currentYear - 1);
+            const date = new Date(anchor);
+            date.setDate(date.getDate() + doy);
+            return date;
+        }
+
+        function formatGregorian(date) {
+            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+            return `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`;
+        }
+
+        function getDayOfYear(m, d) { return m * CONFIG.daysPerMonth + d; }
+        function getWeekOfYear(d) { return Math.floor(d / CONFIG.daysPerWeek) + 1; }
+        function getDayOfWeek(d) { return (d % CONFIG.daysPerWeek) + 1; }
+        function getWeekOfMonth(d) { return Math.floor((d % CONFIG.daysPerMonth) / CONFIG.daysPerWeek) + 1; }
+
+        function applyTheme(i) {
+            const t = THEMES[i];
+            const r = document.documentElement;
+            r.style.setProperty('--accent-primary', t.primary);
+            r.style.setProperty('--accent-secondary', t.secondary);
+            r.style.setProperty('--accent-glow', t.glow);
+            r.style.setProperty('--accent-glow-2', t.glow2);
+        }
+
+        function getFestival(doy) {
+            return FESTIVALS[doy] || null;
+        }
+
+        function renderCalendar(animateClass) {
+            applyTheme(currentMonth);
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+            
+            const start = currentMonth * CONFIG.daysPerMonth;
+            
+            for (let w = 0; w < CONFIG.weeksPerMonth; w++) {
+                const row = document.createElement('div');
+                row.className = `week-row ${animateClass || ''}`;
+                
+                const wn = document.createElement('div');
+                wn.className = 'week-num';
+                wn.textContent = getWeekOfYear(start + w * CONFIG.daysPerWeek);
+                row.appendChild(wn);
+                
+                for (let d = 0; d < CONFIG.daysPerWeek; d++) {
+                    const dim = w * CONFIG.daysPerWeek + d;
+                    const doy = start + dim;
+                    
+                    const cell = document.createElement('div');
+                    cell.className = 'day-cell';
+                    if (doy === todayDayOfYear) cell.classList.add('today');
+                    if (selectedDay === doy) cell.classList.add('selected');
+                    
+                    const fest = getFestival(doy);
+                    
+                    if (d === 0 && doy !== todayDayOfYear && !fest) {
+                        const ind = document.createElement('div');
+                        ind.className = 'day-indicator';
+                        cell.appendChild(ind);
+                    }
+                    
+                    const num = document.createElement('div');
+                    num.className = 'day-number';
+                    num.textContent = dim + 1;
+                    cell.appendChild(num);
+                    
+                    if (fest) {
+                        const fi = document.createElement('div');
+                        fi.className = 'fest-indicator';
+                        fi.style.background = TYPE_COLORS[fest.type];
+                        fi.style.color = TYPE_COLORS[fest.type];
+                        cell.appendChild(fi);
+                    }
+                    
+                    cell.onclick = () => openDetail(doy);
+                    row.appendChild(cell);
+                }
+                grid.appendChild(row);
+            }
+            
+            document.getElementById('monthTitle').textContent = `Month ${currentMonth + 1}`;
+            document.getElementById('monthMeta').textContent = `${THEMES[currentMonth].yoruba} • ${THEMES[currentMonth].season}`;
+            updateStats(start);
+        }
+
+        function updateStats(doy) {
+            document.getElementById('statDay').textContent = doy + 1;
+            document.getElementById('statWeek').textContent = getWeekOfYear(doy);
+            document.getElementById('statWeekDay').textContent = getDayOfWeek(doy);
+            document.getElementById('statQuarter').textContent = QUARTERS[currentMonth];
+        }
+
+        function openDetail(doy) {
+            selectedDay = doy;
+            renderCalendar();
+            
+            const mi = Math.floor(doy / CONFIG.daysPerMonth);
+            const dim = (doy % CONFIG.daysPerMonth) + 1;
+            const wm = getWeekOfMonth(doy);
+            const dw = getDayOfWeek(doy);
+            const wy = getWeekOfYear(doy);
+            const t = THEMES[mi];
+            const fest = getFestival(doy);
+            const gregDate = getGregorianDate(doy);
+            
+            const yp = ((doy + 1) / 364 * 100).toFixed(1);
+            const mp = ((dim / 28) * 100).toFixed(1);
+            
+            document.getElementById('detailTitle').textContent = `Day ${doy + 1}`;
+            document.getElementById('detailSubtitle').textContent = `${t.yoruba} (Month ${mi + 1}), Week ${wm}`;
+            
+            setTimeout(() => {
+                const c = 2 * Math.PI * 35;
+                document.getElementById('yearRing').style.strokeDasharray = c;
+                document.getElementById('yearRing').style.strokeDashoffset = c * (1 - parseFloat(yp) / 100);
+                document.getElementById('monthRing').style.strokeDasharray = c;
+                document.getElementById('monthRing').style.strokeDashoffset = c * (1 - parseFloat(mp) / 100);
+                document.getElementById('yearPercent').textContent = `${yp}%`;
+                document.getElementById('monthPercent').textContent = `${mp}%`;
+            }, 100);
+            
+            let cardsHtml = '';
+            
+            if (fest) {
+                cardsHtml += `
+                    <div class="fest-card ${fest.type}">
+                        <div class="fest-icon">${fest.icon}</div>
+                        <div class="fest-text">
+                            <div class="fest-name">${fest.name}</div>
+                            <div class="fest-desc">${fest.desc}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            cardsHtml += `
+                <div class="info-card">
+                    <div class="info-icon">◈</div>
+                    <div class="info-text">
+                        <div class="info-label">Calendar Position</div>
+                        <div class="info-value highlight">${t.yoruba}, Day ${dim}</div>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon">◎</div>
+                    <div class="info-text">
+                        <div class="info-label">Structure</div>
+                        <div class="info-value">Day ${dw} of 4 • Week ${wm} of 7</div>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon">◉</div>
+                    <div class="info-text">
+                        <div class="info-label">Annual Cycle</div>
+                        <div class="info-value">Week ${wy} of 91 • ${t.season}</div>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon">✦</div>
+                    <div class="info-text">
+                        <div class="info-label">Gregorian Anchor</div>
+                        <div class="info-value highlight">${formatGregorian(gregDate)}</div>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="info-icon">◐</div>
+                    <div class="info-text">
+                        <div class="info-label">Year Completion</div>
+                        <div class="info-value">${doy + 1} of 364 days</div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('detailCards').innerHTML = cardsHtml;
+            document.getElementById('detailScreen').classList.add('open');
+            document.getElementById('overlay').classList.add('active');
+            updateStats(doy);
+        }
+
+        function closeDetail() {
+            document.getElementById('detailScreen').classList.remove('open');
+            document.getElementById('overlay').classList.remove('active');
+            selectedDay = null;
+            setTimeout(() => renderCalendar(), 300);
+        }
+
+        function prevMonth() {
+            if (isAnimating) return;
+            isAnimating = true;
+            currentMonth = (currentMonth - 1 + 13) % 13;
+            renderCalendar('animate-slide-left');
+            setTimeout(() => isAnimating = false, 350);
+        }
+
+        function nextMonth() {
+            if (isAnimating) return;
+            isAnimating = true;
+            currentMonth = (currentMonth + 1) % 13;
+            renderCalendar();
+            setTimeout(() => isAnimating = false, 350);
+        }
+
+        function goToToday() {
+            todayDayOfYear = getTodayDayOfYear();
+            currentMonth = Math.floor(todayDayOfYear / CONFIG.daysPerMonth);
+            renderCalendar();
+            showToast('Odun Tuntun — Yoruba New Year');
+        }
+
+        function openPicker() {
+            const g = document.getElementById('pickerGrid');
+            g.innerHTML = '';
+            for (let i = 0; i < 13; i++) {
+                const o = document.createElement('div');
+                o.className = `month-option ${i === currentMonth ? 'active' : ''}`;
+                o.innerHTML = `<div class="month-option-name">M${i + 1}</div><div class="month-option-season">${THEMES[i].yoruba}</div>`;
+                o.onclick = () => { currentMonth = i; closePicker(); renderCalendar(); };
+                g.appendChild(o);
+            }
+            document.getElementById('pickerScreen').classList.add('open');
+        }
+
+        function closePicker() {
+            document.getElementById('pickerScreen').classList.remove('open');
+        }
+
+        let toastT;
+        function showToast(m) {
+            const t = document.getElementById('toast');
+            document.getElementById('toastText').textContent = m;
+            t.classList.add('show');
+            clearTimeout(toastT);
+            toastT = setTimeout(() => t.classList.remove('show'), 2500);
+        }
+
+        // Swipe
+        let tsX = 0, tsY = 0, teX = 0, swiping = false;
+        document.addEventListener('touchstart', e => {
+            tsX = e.changedTouches[0].screenX;
+            tsY = e.changedTouches[0].screenY;
+            swiping = false;
+        }, { passive: true });
+        document.addEventListener('touchmove', e => {
+            const x = e.changedTouches[0].screenX, y = e.changedTouches[0].screenY;
+            if (Math.abs(x - tsX) > Math.abs(y - tsY) && Math.abs(x - tsX) > 10) swiping = true;
+        }, { passive: true });
+        document.addEventListener('touchend', e => {
+            if (!swiping) return;
+            teX = e.changedTouches[0].screenX;
+            if (teX < tsX - 50) nextMonth();
+            else if (teX > tsX + 50) prevMonth();
+        }, { passive: true });
+
+        // Keyboard
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft') prevMonth();
+            if (e.key === 'ArrowRight') nextMonth();
+            if (e.key === 'Escape') { closeDetail(); closePicker(); }
+            if (e.key === 't' || e.key === 'T') goToToday();
+        });
+
+        renderCalendar();
+    </script>
+</body>
+</html>

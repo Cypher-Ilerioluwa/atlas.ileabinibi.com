@@ -50,14 +50,18 @@ If a folder is missing, click **Add file > Upload files** and drag just that fol
 
 ### D1. Run the database files, in order
 
-Use **Supabase > SQL Editor > New query** for every file. For each file below: in GitHub open `supabase` > `migrations` > the file, click the **Copy raw file** icon (two squares, top right), paste into a new Supabase query, press **Run**, and wait for "Success" before the next one. Do not paste the page text itself, and do not run two files in the same query tab.
+> **Already ran some files?** Run only the ones you have not run yet, in number order. If you ran 0001 to 0007 before this update, run just **0008** now, then `0006_selfcheck.sql` again.
+
+Use **Supabase > SQL Editor > New query** for every file. For each file: in GitHub open `supabase` > `migrations` > the file, click the **Copy raw file** icon (two squares, top right), paste into a new Supabase query, press **Run**, and wait for "Success" before the next one. Do not run two files in the same query tab.
 
 1. `0001_core_schema.sql`
 2. `0002_security.sql`
 3. `0003_admin.sql`
 4. `0004_features.sql`
 5. `0005_storage.sql`
-6. `0006_selfcheck.sql` (run this last; it changes nothing and shows OK or MISSING for each part)
+6. `0007_publish_content.sql` (publishes the pilot content from your prototype)
+7. `0008_community_features.sql` (contributors and credits, imports from ileabinibi.com, chat replies, reactions and read receipts)
+8. `0006_selfcheck.sql` last: it changes nothing and shows OK or MISSING for each part
 
 **If a file fails**
 1. Do not run the later files. Scroll the result panel and copy the **red error message in full** (it names the line). Send it to me; one error message is all I need.
@@ -71,20 +75,20 @@ Run `0006_selfcheck.sql`. Every row must say **OK**:
 
 | Check | Meaning |
 |---|---|
-| Tables created (29) | The database tables exist |
+| Tables created (33) | The database tables exist |
 | Tables with security OFF (0) | Every table is protected |
 | Public views (11) | Public pages can read published content |
-| Key functions (8) | Approval, admin and search functions exist |
+| Key functions (10) | Approval, admin, credits and search functions exist |
 | Sign-up trigger / Admin trigger | New accounts get a profile; your admin email is recognised |
 | Storage buckets (3), Private bucket is private | Upload areas exist; private uploads are not public |
 | Storage access rules (10) | Who may upload or read files |
-| Live chat switched on | The discussion room updates instantly |
+| Live chat switched on (3) | Messages, reactions and read receipts update instantly |
 
 **If a check says MISSING**, fix only that item:
 - **Sign-up trigger or Admin trigger missing:** Supabase did not allow the SQL to attach to the user table. Contact me with the warning text; meanwhile the manual admin SQL in Part I still works, but new sign-ups will not get a profile row until this is fixed.
 - **Storage buckets missing:** Dashboard > **Storage > New bucket**. Create `public-media` (public), `avatars` (public), `private-submissions` (**not** public).
 - **Storage access rules missing (fewer than 10):** Dashboard > **Storage > Policies**, or send me the warning and I will give the exact rules to paste in the policy editor. Without them, uploads (pictures and attachments) will be refused, but everything else works.
-- **Live chat switched on missing:** Dashboard > **Database > Publications > supabase_realtime**, switch on the table `chat_messages`.
+- **Live chat switched on missing:** Dashboard > **Database > Publications > supabase_realtime**, switch on the tables `chat_messages`, `chat_reactions` and `chat_reads`.
 
 ### D3. Copy your keys
 Supabase > **Project Settings > API** (may be named "API Keys"). Copy into your password manager:
@@ -229,9 +233,8 @@ Limits: on iPhone and iPad push only works after the app is added to the home sc
 
 ## Part K. Publish the pilot content, then add your own
 
-### K1. Publish the content from your prototype (one SQL file)
-1. In GitHub open `supabase` > `migrations` > `0007_publish_content.sql`, click **Copy raw file**.
-2. Supabase > **SQL Editor > New query**, paste, **Run**. It is safe to run twice; rows that exist are skipped.
+### K1. Publish the content from your prototype
+If you did not already run it in Part D1: open `0007_publish_content.sql` in GitHub, **Copy raw file**, paste it in a new Supabase query and **Run**. It is safe to run twice; rows that exist are skipped. Then run `0008_community_features.sql`, which credits this content to "Ilẹ̀ Abínibí Atlas prototype".
 3. The result table at the bottom shows what is now published. Expect: 27 communities, 22 articles, 13 heritage records, 2 landmarks, 4 events, 2 people, 1 institution, 1 organisation, 1 proverb, 13 quiz questions.
 4. Reload the site. It now shows:
 
@@ -315,6 +318,38 @@ Use three accounts: you (admin), a second email as a **member**, a third as an *
 
 ---
 
+## Part Q. Automatic posts from ileabinibi.com
+
+The Atlas can pull posts from your WordPress site and publish them in the right section, with the right community, topic, author and co-editors. It uses **tags** that you add to the WordPress post. Nothing on the WordPress site needs to be installed.
+
+### Tags to add on WordPress (Posts > edit a post > Tags)
+| Tag (type it exactly) | Meaning |
+|---|---|
+| `atlas` | **Required.** Import this post into the Atlas |
+| `atlas:type:article` | Where it goes: `article` (default), `event`, `heritage`, `landmark`, `person`, `institution`, `organisation` |
+| `atlas:topic:history` | For articles: `history`, `people`, `language`, `culture`, `food`, `spirituality`, `names`, `popular_event` |
+| `atlas:community:ile-ife` | The community's short name (its slug, as in the Atlas address `/city/?c=ile-ife`) |
+| `atlas:editor:Ọlá Adé` | One tag per co-editor. The WordPress **author** is the lead author |
+| `atlas:date:2026-08-14` | For events: start date. Optional end date: `atlas:enddate:2026-08-16` |
+| `atlas:category:craft` | For heritage records (`oral_history`, `craft`, `practice`, …) or the category of an organisation |
+
+Example: a post about Ilé-Ifẹ̀ history, written by Ada Obi and edited by Tunde Bello, gets the tags `atlas`, `atlas:topic:history`, `atlas:community:ile-ife`, `atlas:editor:Tunde Bello`.
+
+### How it runs
+1. Deploy the update (the import functions are in the `netlify` folder). In Netlify > Environment variables you already have `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`; the import uses the same two. Optional: `WP_BASE_URL` (defaults to `https://ileabinibi.com`).
+2. It runs **every hour** by itself. To run it now: Dashboard > **Admin > ileabinibi.com sync > Sync now**. **Check connection** confirms the function is deployed and configured.
+3. New posts appear in the Atlas with the cover picture, a "Read the original" link back to ileabinibi.com, and the author and editors listed. Changing the post on WordPress updates the Atlas copy at the next import. If you remove the `atlas` tag or delete the post, the Atlas copy is archived (hidden), not deleted.
+4. WordPress must allow the public REST API (the default). If a security plugin or firewall blocks it, the sync panel shows the error; allow requests to `/wp-json/wp/v2/` for the user agent `IleAbinibiAtlasSync`.
+
+Note: scheduled functions run only on the published production deploy.
+
+## Part R. Credits and contributor pages
+
+Every post, event and record shows who wrote and edited it. The first name is the author; later names are editors or contributors. Clicking a name opens that person's page with everything they have written, edited or worked on.
+- **Members' submissions:** when you approve a submission, its author is credited automatically. When you approve a correction, the person who sent it is added as an editor.
+- **Editing credits by hand:** Admin > any content section > Edit > "Credits": one person per line as `Name | role`, the first line being the author.
+- **Imported posts:** credits come from the WordPress author and the `atlas:editor:` tags.
+
 ## Part P. Not built yet
 
-The Kọ́jọ́dá calendar (needs your original calendar source), indexable pages per community and article, duplicate-record merging, a media review gallery, email notifications, event reminders, a change-email flow, and the privacy/terms pages.
+Indexable pages per community and article, duplicate-record merging, a media review gallery, email notifications, event reminders, a change-email flow, and the privacy/terms pages.
