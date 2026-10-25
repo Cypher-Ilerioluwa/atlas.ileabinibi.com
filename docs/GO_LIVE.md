@@ -50,7 +50,7 @@ If a folder is missing, click **Add file > Upload files** and drag just that fol
 
 ### D1. Run the database files, in order
 
-> **Already ran some files?** Run only the ones you have not run yet, in number order. If you ran 0001 to 0008 before this update, run just **0009** and **0010** now, then `0006_selfcheck.sql` again.
+> **Already ran some files?** Run only the ones you have not run yet, in number order. If you ran 0001 to 0009 before this update, run just **0010** and **0011** now, then `0006_selfcheck.sql` again.
 
 Use **Supabase > SQL Editor > New query** for every file. For each file: in GitHub open `supabase` > `migrations` > the file, click the **Copy raw file** icon (two squares, top right), paste into a new Supabase query, press **Run**, and wait for "Success" before the next one. Do not run two files in the same query tab.
 
@@ -62,8 +62,9 @@ Use **Supabase > SQL Editor > New query** for every file. For each file: in GitH
 6. `0007_publish_content.sql` (publishes the pilot content from your prototype)
 7. `0008_community_features.sql` (contributors and credits, imports from ileabinibi.com, chat replies, reactions and read receipts)
 8. `0009_social_chat.sql` (chat photos, edit and pin, likes and comments, formatted imported posts, live notification badges)
-9. `0010_media.sql` (shared music and playlists)
-10. `0006_selfcheck.sql` last: it changes nothing and shows OK or MISSING for each part
+9. `0010_media.sql` (shared music and playlists). Safe to run again. **If the Media page says "Could not find the table 'public.media_shares' in the schema cache", this file has not been run yet: run it now.** It ends by refreshing Supabase's API cache, so no restart is needed
+10. `0011_house_author.sql` (makes **Ilẹ̀ Abínibí** the author of all content, linking to https://ileabinibi.com/). Safe to run again
+11. `0006_selfcheck.sql` last: it changes nothing and shows OK or MISSING for each part
 
 **If a file fails**
 1. Do not run the later files. Scroll the result panel and copy the **red error message in full** (it names the line). Send it to me; one error message is all I need.
@@ -172,7 +173,8 @@ You already created the `atlas` subdomain. Creating one at a web host (for examp
 8. Wait a few minutes to a few hours. Check at dnschecker.org by entering `atlas.ileabinibi.com` with type CNAME.
 9. Back in Netlify > Domain management, wait for **HTTPS** to show a certificate (automatic). Turn on **Force HTTPS** if offered.
 10. Open **https://atlas.ileabinibi.com/**. You should see the padlock and the Atlas.
-11. Confirm Part E still lists `https://atlas.ileabinibi.com/**` and the Site URL.
+11. In Netlify > Domain management set `atlas.ileabinibi.com` as the **Primary domain**, so the old `*.netlify.app` address redirects to it.
+12. Confirm Part E still lists `https://atlas.ileabinibi.com/**` and the Site URL.
 
 ---
 
@@ -324,19 +326,35 @@ Use three accounts: you (admin), a second email as a **member**, a third as an *
 
 **What is confirmed:** your WordPress REST address `https://ileabinibi.com/wp-json/wp/v2/posts` is public and working, the tag **atlas** exists (id 140) and 10 posts already carry it. No password is needed to read published posts.
 
-**How it works:** every hour a Netlify function asks WordPress for the list of posts tagged `atlas` (just ids and last-modified times), downloads only the posts that are new or changed, and saves them in the Atlas keyed by the WordPress post number, so a re-run updates instead of duplicating. A post that is unpublished, trashed or loses the tag is hidden in the Atlas too (archived, not deleted). Imported posts open inside the Atlas like any other post: same layout, headings, lists, tables and pictures, with comments, likes and saves. Readers are not shown that they came from WordPress, and links to other pages of your own site are removed (links to other imported posts become in-app links). The original address is stored out of sight and used as the page's canonical link.
+**How it works:** every hour a Netlify function asks WordPress for the list of posts tagged `atlas` (just ids and last-modified times), downloads only the posts that are new or changed, and saves them in the Atlas keyed by the WordPress post number, so a re-run updates instead of duplicating. A post that is unpublished, trashed or loses the tag is hidden in the Atlas too (archived, not deleted). Imported posts open inside the Atlas like any other post: same layout, headings, lists, tables and pictures, with comments, likes and saves. Readers are not shown that they came from WordPress, and links to other pages of your own site are removed (links to other imported posts become `https://atlas.ileabinibi.com/post/?s=wp-…` links). The original WordPress address is stored out of sight; each page's canonical link is its own atlas.ileabinibi.com address.
 
 ### What the importer works out by itself
-If a post has none of the special tags, the importer uses your ordinary WordPress tags and categories: words such as *language, food, festival, history, ifa, orisha* pick the topic, and tags such as *lagos, ijebu, oyo, ife, ibadan* pick the community. WordPress user names like "admin" are credited as "Ilẹ̀ Abínibí Editorial" (change it with the `WP_AUTHOR_NAME` setting).
+If a post has none of the special tags, the importer uses your ordinary WordPress tags and categories: words such as *language, food, festival, history, ifa, orisha* pick the topic, and tags such as *lagos, ijebu, oyo, ife, ibadan* pick the community. The author of every imported post is **Ilẹ̀ Abínibí** (linked to https://ileabinibi.com/), whoever wrote it in WordPress.
+
+### The tags to use (the simple way)
+On every WordPress post you want in the Atlas add **two kinds of tag**: the tag `atlas`, plus **one topic tag**. Type the topic exactly as written (capital letter optional):
+
+| Topic tag | Slug WordPress makes | Where it shows in the Atlas |
+|---|---|---|
+| `History` | history | Posts > History filter, community pages |
+| `People` | people | Posts > People |
+| `Language` | language | Posts > Language |
+| `Culture` | culture | Posts > Culture |
+| `Food` | food | Posts > Food |
+| `Spirituality` | spirituality | Posts > Spirituality |
+| `Names` | names | Posts > Names |
+| `Popular events` | popular-events | Posts > Popular events |
+
+Example: a post tagged `atlas`, `History` and `atlas:community:ile-ife` appears in the History filter and on the Ilé-Ifẹ̀ community page. Use only one topic tag per post; if there are several, the first in the table's order wins. A topic can also be set with a WordPress **category** of the same name. The long form `atlas:topic:history` still works and wins if both are present. A post with no topic tag is guessed from its other tags and otherwise filed under Culture.
 
 ### Tags you can add to take control (WordPress > Posts > edit > Tags)
 | Tag (type it exactly) | Meaning |
 |---|---|
 | `atlas` | **Required.** Import this post |
 | `atlas:type:article` | Where it goes: `article` (default), `event`, `heritage`, `landmark`, `person`, `institution`, `organisation` |
-| `atlas:topic:history` | For articles: `history`, `people`, `language`, `culture`, `food`, `spirituality`, `names`, `popular_event` |
+| `atlas:topic:history` | Long form of the topic tags above (`history`, `people`, `language`, `culture`, `food`, `spirituality`, `names`, `popular_event`) |
 | `atlas:community:ile-ife` | The community's short name (slug, as in the Atlas address `/city/?c=ile-ife`) |
-| `atlas:editor:Ọlá Adé` | One tag per co-editor. The WordPress **author** is the lead author |
+| `atlas:editor:Ọlá Adé` | One tag per co-editor, shown after the author. The author of every post is always **Ilẹ̀ Abínibí** |
 | `atlas:date:2026-08-14` | For events: start date. Optional end date: `atlas:enddate:2026-08-16` |
 | `atlas:category:craft` | For heritage records (`oral_history`, `craft`, `practice`, …) or the category of an organisation |
 
@@ -345,7 +363,6 @@ You already have `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`; the importer us
 | Name | Purpose |
 |---|---|
 | `WP_BASE_URL` | Your WordPress address. Default `https://ileabinibi.com` |
-| `WP_AUTHOR_NAME` | The credit used instead of a raw WordPress user name such as "admin" |
 | `WP_USER` and `WP_APP_PASSWORD` | Only if WordPress ever blocks anonymous reading (a security plugin that limits the REST API). See below |
 
 ### Do I need an application password?
@@ -362,7 +379,8 @@ You already have `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`; the importer us
 Every post, event and record shows who wrote and edited it. The first name is the author; later names are editors or contributors. Clicking a name opens that person's page with everything they have written, edited or worked on.
 - **Members' submissions:** when you approve a submission, its author is credited automatically. When you approve a correction, the person who sent it is added as an editor.
 - **Editing credits by hand:** Admin > any content section > Edit > "Credits": one person per line as `Name | role`, the first line being the author.
-- **Imported posts:** credits come from the WordPress author and the `atlas:editor:` tags.
+- **Author:** every item shows **Ilẹ̀ Abínibí** as author, linking to https://ileabinibi.com/. Anyone else who is credited (members whose submissions you approve, `atlas:editor:` tags, names added in Admin) appears after it as editor or contributor.
+- **Imported posts:** the author is Ilẹ̀ Abínibí; `atlas:editor:` tags add editors.
 
 ## Part S. Media: music and playlists
 
@@ -389,6 +407,10 @@ Every post, event and record shows who wrote and edited it. The first name is th
 - **Install on Android and computers:** a small prompt offers to install after a couple of visits, and there is an Install button in More and in Settings.
 - **Install on iPhone and iPad:** Apple does not allow any website to add itself to the Home Screen automatically. The Atlas shows a guide (Share, then Add to Home Screen, then Add) from the More sheet, Settings and a polite banner after a few visits. Once installed from Safari it opens full screen like an app, and push notifications work on iPhone only after this step (iOS 16.4 or later).
 - **Confirming push:** the address `https://YOUR-SITE.netlify.app/.netlify/functions/send-push` shows `"ready": true` when the four Netlify settings are present. Real delivery is confirmed by turning push on in a signed-in phone's Settings and sending a test from Admin > Push.
+
+## Part U. Fixing "Could not find the table 'public.media_shares' in the schema cache"
+
+The Media page asked Supabase for the table `media_shares`, and Supabase does not have it (or has not noticed it yet). Fix: Supabase > **SQL Editor** > new query > paste all of `supabase/migrations/0010_media.sql` > **Run**. It can be run any number of times and ends with a command that refreshes the API cache. Reload the Media page. If it still shows the message, run `notify pgrst, 'reload schema';` alone in a new query. The app now shows a plain-English version of this message instead of the database wording.
 
 ## Part P. Not built yet
 
