@@ -12,7 +12,8 @@ export function signedInHint() {
   try { return Object.keys(localStorage).some(k => /^sb-.*-auth-token$/.test(k) && localStorage.getItem(k)); } catch { return false; }
 }
 export function labelAccountLink(signedIn = signedInHint()) {
-  const a = document.getElementById('acct-link'); if (a) a.textContent = signedIn ? 'Dashboard' : 'Sign in / Sign up';
+  const a = document.getElementById('acct-link'); if (a) (a.querySelector('.acct-text') || a).textContent = signedIn ? 'Dashboard' : 'Sign in / Sign up';
+  if (!signedIn) document.querySelectorAll('[data-nbadge]').forEach(b => { b.hidden = true; });
   document.querySelectorAll('[data-acct-label] b').forEach(b => { b.textContent = signedIn ? 'Dashboard' : 'Sign in / Sign up'; });
   document.querySelectorAll('[data-acct-icon]').forEach(x => x.classList.toggle('on', signedIn));
 }

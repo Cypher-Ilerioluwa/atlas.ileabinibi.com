@@ -1,6 +1,6 @@
 -- Run any time. Shows one row per check with OK or MISSING. Nothing is changed.
 select item, expected, found, case when ok then 'OK' else 'MISSING' end as status from (
-  select 'Tables created' as item, '33' as expected, count(*)::text as found, count(*) >= 33 as ok
+  select 'Tables created' as item, '36' as expected, count(*)::text as found, count(*) >= 36 as ok
     from pg_tables where schemaname = 'public'
   union all
   select 'Tables with security (RLS) OFF', '0', count(*)::text, count(*) = 0
@@ -21,16 +21,16 @@ select item, expected, found, case when ok then 'OK' else 'MISSING' end as statu
     from pg_trigger t join pg_class c on c.oid = t.tgrelid join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'auth' and c.relname = 'users' and t.tgname = 'bootstrap_admin'
   union all
-  select 'Storage buckets (public-media, avatars, private-submissions)', '3', count(*)::text, count(*) = 3
-    from storage.buckets where id in ('public-media','avatars','private-submissions')
+  select 'Storage buckets (public-media, avatars, private-submissions, chat-media)', '4', count(*)::text, count(*) = 4
+    from storage.buckets where id in ('public-media','avatars','private-submissions','chat-media')
   union all
   select 'Private bucket is private', '1', count(*)::text, count(*) = 1
     from storage.buckets where id = 'private-submissions' and not public
   union all
-  select 'Storage access rules (policies)', '10', count(*)::text, count(*) >= 10
+  select 'Storage access rules (policies)', '13', count(*)::text, count(*) >= 13
     from pg_policies where schemaname = 'storage' and tablename = 'objects'
-      and policyname in ('public media readable','editors write public media','editors update public media','own submission upload','own submission read','own submission delete','avatars readable','own avatar write','own avatar update','own avatar delete')
+      and policyname in ('public media readable','editors write public media','editors update public media','own submission upload','own submission read','own submission delete','avatars readable','own avatar write','own avatar update','own avatar delete','chat media readable','own chat media upload','own chat media delete')
   union all
-  select 'Live chat switched on (realtime: messages, reactions, read receipts)', '3', count(*)::text, count(*) = 3
-    from pg_publication_tables where pubname = 'supabase_realtime' and tablename in ('chat_messages','chat_reactions','chat_reads')
+  select 'Live updates switched on (realtime: chat, reactions, read receipts, notifications)', '4', count(*)::text, count(*) = 4
+    from pg_publication_tables where pubname = 'supabase_realtime' and tablename in ('chat_messages','chat_reactions','chat_reads','notifications')
 ) c order by ok, item;

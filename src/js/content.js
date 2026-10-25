@@ -88,3 +88,51 @@ export async function searchAll(q, { communities, articles, records }) {
   records.filter(r => matches([r.title, r.summary], q)).slice(0, 3).forEach(r => out.push({ kind: 'Record', title: r.title, sub: '', href: `/post/?t=heritage_record&s=${encodeURIComponent(r.slug)}` }));
   return out;
 }
+
+// ---------- likes, saves and comments ----------
+const isDemo = () => !isConfigured();
+export async function loadEngagement(type, id, userId) {
+  if (isDemo()) {
+    const d = demoStore(); d.likes ||= []; d.saves ||= []; d.comments ||= [];
+    return { likes: d.likes.filter(l => l.t === type && l.i === id).length, liked: d.likes.some(l => l.t === type && l.i === id && l.u === userId), saved: d.saves.some(l => l.t === type && l.i === id && l.u === userId), comments: d.comments.filter(c => c.content_type === type && c.content_id === id) };
+  }
+  const c = await getClient(), q = t => c.from(t).select('*', { count: 'exact', head: true });
+  const likes = (await c.from('post_likes').select('user_id', { count: 'exact', head: true }).eq('content_type', type).eq('content_id', id)).count || 0;
+  let liked = false, saved = false;
+  if (userId) {
+    liked = Boolean((await c.from('post_likes').select('user_id').eq('content_type', type).eq('content_id', id).eq('user_id', userId).maybeSingle()).data);
+    saved = Boolean((await c.from('saved_records').select('record_id').eq('record_type', type).eq('record_id', id).eq('user_id', userId).maybeSingle()).data);
+  }
+  const comments = must(await c.from('post_comments').select('*').eq('content_type', type).eq('content_id', id).order('created_at', { ascending: true }).limit(200));
+  return { likes, liked, saved, comments };
+}
+export async function toggleLike(type, id, user, liked) {
+  if (isDemo()) { const d = demoStore(); d.likes ||= []; if (liked) d.likes = d.likes.filter(l => !(l.t === type && l.i === id && l.u === user.id)); else d.likes.push({ t: type, i: id, u: user.id }); demoSave(); return; }
+  const c = await getClient();
+  must(liked ? await c.from('post_likes').delete().eq('content_type', type).eq('content_id', id).eq('user_id', user.id) : await c.from('post_likes').insert({ content_type: type, content_id: id, user_id: user.id }));
+}
+export async function toggleSave(type, id, user, saved) {
+  if (isDemo()) { const d = demoStore(); d.saves ||= []; if (saved) d.saves = d.saves.filter(l => !(l.t === type && l.i === id && l.u === user.id)); else d.saves.push({ t: type, i: id, u: user.id }); demoSave(); return; }
+  const c = await getClient();
+  must(saved ? await c.from('saved_records').delete().eq('record_type', type).eq('record_id', id).eq('user_id', user.id) : await c.from('saved_records').insert({ record_type: type, record_id: id, user_id: user.id }));
+}
+export async function addComment(type, id, user, body) {
+  if (isDemo()) { const d = demoStore(); d.comments ||= []; const row = { id: newId(), content_type: type, content_id: id, user_id: user.id, author_name: user.name, author_avatar: null, author_role: user.role || null, body, created_at: new Date().toISOString() }; d.comments.push(row); demoSave(); return row; }
+  return must(await (await getClient()).from('post_comments').insert({ content_type: type, content_id: id, user_id: user.id, body }).select().single());
+}
+export async function deleteComment(id) {
+  if (isDemo()) { const d = demoStore(); d.comments = (d.comments || []).filter(c => c.id !== id); demoSave(); return; }
+  must(await (await getClient()).from('post_comments').delete().eq('id', id));
+}
+export async function listSaved(userId) {
+  let links;
+  if (isDemo()) links = (demoStore().saves || []).filter(l => l.u === userId).map(l => ({ record_type: l.t, record_id: l.i }));
+  else links = must(await (await getClient()).from('saved_records').select('record_type, record_id').eq('user_id', userId));
+  const out = [];
+  for (const [type, T] of Object.entries(TYPES)) {
+    const ids = links.filter(l => l.record_type === type).map(l => l.record_id); if (!ids.length) continue;
+    const rows = isDemo() ? demoStore()[T.table].filter(r => ids.includes(r.id)) : must(await (await getClient()).from(T.view).select('*').in('id', ids));
+    rows.forEach(r => out.push({ type, item: r }));
+  }
+  return out;
+}

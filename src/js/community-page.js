@@ -16,7 +16,8 @@ async function discuss() {
   chat?.close();
   const rooms = [{ id: 'general', name: 'General' }, ...communities.map(c => ({ id: c.slug, name: c.preferred_name }))];
   panel.innerHTML = '<div id="chatmount"></div>';
-  chat = await mountChat($('chatmount'), { ctx, rooms, initialRoom: new URLSearchParams(location.search).get('room') || 'general' });
+  const wanted = new URLSearchParams(location.search).get('room');
+  chat = await mountChat($('chatmount'), { ctx, rooms, initialRoom: wanted || 'general', directOpen: Boolean(wanted) });
 }
 
 // ---------- quiz ----------

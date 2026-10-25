@@ -10,6 +10,7 @@ export const TOPICS = ['history', 'people', 'language', 'culture', 'food', 'spir
 export const TOPIC_LABEL = { history: 'History', people: 'People', language: 'Language', culture: 'Culture', food: 'Food', spirituality: 'Spirituality', names: 'Names', popular_event: 'Popular events' };
 const must = ({ data, error }) => { if (error) throw new Error(error.message); return data; };
 const nowIso = () => new Date().toISOString();
+const announce = row => { if (typeof dispatchEvent === 'function' && typeof CustomEvent === 'function') setTimeout(() => dispatchEvent(new CustomEvent('atlas-notify', { detail: row })), 300); };
 const uid = () => crypto.randomUUID();
 const dayOffset = n => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
 
@@ -38,6 +39,7 @@ function seedBase() {
     contributors: [{ id: 'ct-proto', slug: 'ile-abinibi-atlas-prototype', display_name: 'Ilẹ̀ Abínibí Atlas prototype', avatar_path: null, bio: 'Pilot content from the first Atlas prototype.' },
                    { id: 'ct-editor', slug: 'sample-editor', display_name: 'Sample editor', avatar_path: null, bio: 'A sample editor shown in the preview.' }],
     content_contributors: [],
+    media_shares: [{ id: 'm-sample', user_id: 'demo-other', community_id: 'c-ile-ife', platform: 'spotify', kind: 'playlist', url: 'https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M', title: 'Sample: a Spotify playlist', artist: 'Preview item', note: 'This is a sample so you can try the player. Share your own below.', cover_url: null, invite: false, listen_at: null, shared_from: null, author_name: 'Sample editor', author_avatar: null, author_role: 'editor', status: 'published', created_at: new Date().toISOString() }],
     subs: [
       { id: uid(), user_id: 'demo-user', kind: 'article', title: 'Sample pending article', region_text: 'Sample region', payload: { topic: 'culture', body: 'Demo only' }, consent_given: true, status: 'submitted', created_at: nowIso() },
       { id: uid(), user_id: 'demo-user', kind: 'event', title: 'Sample rejected event', region_text: 'Sample region', payload: {}, consent_given: true, status: 'rejected', editor_feedback: 'Sample feedback: please add the exact venue.', created_at: nowIso() },
@@ -56,7 +58,7 @@ let demoDb;
 function db() {
   if (demoDb) return demoDb;
   try { demoDb = JSON.parse(sessionStorage.getItem('atlas-demo-db')); } catch {}
-  if (!demoDb || !demoDb.contributors) demoDb = seedDemo();   // older saved previews are rebuilt
+  if (!demoDb || !demoDb.contributors || !demoDb.media_shares) demoDb = seedDemo();   // older saved previews are rebuilt
   return demoDb;
 }
 export const demoStore = () => db();
@@ -132,7 +134,7 @@ export async function getContext() {
 
 export const withTimeout = (p, ms, fallback) => Promise.race([p, new Promise(r => setTimeout(() => r(fallback), ms))]);
 const b64ToU8 = s => { const p = '='.repeat((4 - s.length % 4) % 4), r = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...r].map(ch => ch.charCodeAt(0))); };
-const ADMIN_TABLES = ['communities', 'articles', 'events', 'heritage_records', 'landmarks', 'people', 'institutions', 'organisations', 'proverbs', 'quiz_questions'];
+const ADMIN_TABLES = ['media_shares', 'communities', 'articles', 'events', 'heritage_records', 'landmarks', 'people', 'institutions', 'organisations', 'proverbs', 'quiz_questions'];
 const SAFE_NAME = n => n.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-80);
 
 function liveApi(c, user, session) {
@@ -164,6 +166,7 @@ function liveApi(c, user, session) {
     },
     notifications: async () => must(await c.from('notifications').select('*').order('created_at', { ascending: false }).limit(100)),
     markRead: async id => { let q = c.from('notifications').update({ read_at: nowIso() }).is('read_at', null); q = id === 'all' ? q.eq('user_id', user.id) : q.eq('id', id); must(await q); },
+    watchNotifications(cb) { const ch = c.channel('notif-' + user.id).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, p => cb(p.new)).subscribe(); return () => c.removeChannel(ch); },
     unread: async () => (await c.from('notifications').select('id', { count: 'exact', head: true }).is('read_at', null)).count || 0,
     prefs: async () => (await c.from('notification_prefs').select('*').eq('user_id', user.id).maybeSingle()).data || { submission_updates: true, event_reminders: true, announcements: false },
     savePrefs: async p => must(await c.from('notification_prefs').upsert({ user_id: user.id, ...p, updated_at: nowIso() })),
@@ -268,7 +271,7 @@ function demoApi(user, admin) {
       const s = D().subs.find(x => x.id === id); s.status = status; s.editor_feedback = fb;
       if (status === 'approved' && s.kind === 'article') D().articles.push({ id: uid(), slug: slugify(s.title), community_id: s.community_id || null, topic: s.payload.topic || 'culture', title: s.title, summary: s.payload.summary, body: s.payload.body || '', status: 'published', published_at: nowIso(), created_at: nowIso(), author_credit: 'Demo' });
       if (status === 'approved' && s.kind === 'event') D().events.push({ id: uid(), slug: slugify(s.title), name: s.title, community_id: s.community_id || null, summary: s.payload.summary, location_text: s.payload.location, region_text: s.region_text, date_start: s.payload.date_start || null, status: 'published', created_at: nowIso() });
-      if (s.user_id === user.id) D().notifs.push({ id: uid(), kind: 'submission', title: 'Decision on your submission: ' + status.replace('_', ' '), body: s.title, link: '/account/#posts', read_at: null, created_at: nowIso() });
+      if (s.user_id === user.id) { const row = { id: uid(), kind: 'submission', title: 'Decision on your submission: ' + status.replace('_', ' '), body: s.title, link: '/account/#posts', read_at: null, created_at: nowIso() }; D().notifs.push(row); announce(row); }
       log('UPDATE', 'submissions', id, { new_status: status }); persist();
     },
     mediaLinks: async () => [],
@@ -285,7 +288,7 @@ function demoApi(user, admin) {
     async deleteUser(id) { if (id === user.id) throw new Error('Use the danger zone in Settings to delete your own account.'); D().users = D().users.filter(u => u.id !== id); log('DELETE', 'users', id, {}); persist(); },
     async sendNotification(audience, emails, title, body) {
       const n = audience === 'selected' ? D().users.filter(u => emails.includes(u.email)).length : D().users.length;
-      D().notifs.push({ id: uid(), kind: 'message', title, body, link: null, read_at: null, created_at: nowIso() }); persist(); return n;
+      const row = { id: uid(), kind: 'message', title, body, link: null, read_at: null, created_at: nowIso() }; D().notifs.push(row); persist(); announce(row); return n;
     },
     sendPush: async () => { throw new Error('Push delivery needs the live site with the Netlify function configured.'); },
     pushStatus: async () => { throw new Error('Available on the live site only.'); },

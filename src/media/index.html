@@ -1,0 +1,29 @@
+<!--page title="Media: music and playlists shared by communities | Ilẹ̀ Abínibí Atlas" desc="Listen to music and playlists shared by Abínibí communities, and share your own from Spotify, Apple Music, YouTube, SoundCloud and more." nav="media" noindex-->
+<!doctype html>
+<html lang="en">
+<head>
+<!--include:head-->
+</head>
+<body>
+<!--include:header-->
+<main id="main">
+  <div class="wrap media">
+    <div class="media-head reveal">
+      <div><div class="eyebrow">Media</div><h1>Listen together</h1><p class="lede">Music and playlists shared by communities. Play them here, or share your own with a community.</p></div>
+      <button class="btn btn-gold" id="m-add" type="button">Share music</button>
+    </div>
+    <div class="navtabs" id="mtabs" role="tablist" aria-label="Media filters"></div>
+    <div class="bar mfilters"><div class="fld" style="margin:0"><label class="visually-hidden" for="mc">Community</label><select id="mc"><option value="">All communities</option></select></div>
+      <div class="fld" style="margin:0"><label class="visually-hidden" for="mp">Platform</label><select id="mp"><option value="">All platforms</option></select></div>
+      <div class="fld" style="margin:0;flex:1;min-width:180px"><label class="visually-hidden" for="mq">Search</label><input id="mq" type="search" placeholder="Search titles and artists"></div></div>
+    <div class="media-layout">
+      <section id="mfeed" aria-live="polite"><div class="loading"><span class="spinner"></span> Loading…</div></section>
+      <aside class="media-stage" id="mstage" aria-label="Player"></aside>
+    </div>
+  </div>
+  <dialog id="dlg"></dialog>
+</main>
+<!--include:footer-->
+<script type="module" src="/js/media-page.js"></script>
+</body>
+</html>

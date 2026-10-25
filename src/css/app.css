@@ -24,7 +24,7 @@ code{background:var(--surface-sunk);padding:.1rem .35rem;border-radius:4px}
 .bar input[type=search],.bar input[type=email]{width:auto;flex:1;min-width:200px}.bar select{width:auto;min-width:160px}
 
 /* ===== app.css: dashboard, forms, community, events, loaders ===== */
-main{animation:fadein .45s var(--ease) both}
+main{animation:fadein .45s var(--ease) backwards}
 @keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .fld{margin-bottom:var(--space-4)}
 .fld .hint{font-size:var(--step--1);color:var(--ink-soft);margin:.25rem 0 0}
@@ -70,7 +70,7 @@ main{animation:fadein .45s var(--ease) both}
 .dnav button[aria-current=page]{background:var(--btn-bg);color:var(--btn-ink)}
 .dnav .sep{height:1px;background:var(--line);margin:.4rem 0}
 .count{background:var(--brand-gold);color:var(--brand-earth);border-radius:999px;font-size:.75rem;font-weight:800;padding:.05rem .5rem}
-.panel{animation:fadein .35s var(--ease) both;min-width:0}
+.panel{animation:fadein .35s var(--ease) backwards;min-width:0}
 .dash-head{display:flex;align-items:center;gap:var(--space-4);flex-wrap:wrap;margin-bottom:var(--space-5)}
 .avatar{width:64px;height:64px;border-radius:50%;background:var(--brand-gold);color:var(--brand-earth);display:grid;place-items:center;font-family:var(--font-display);font-weight:700;font-size:1.6rem;object-fit:cover;flex:none}
 .avatar.big{width:96px;height:96px;font-size:2.4rem}

@@ -6,6 +6,7 @@ import { esc } from './search.js';
 import { fmtDate } from './core.js';
 import { countUp } from './ui.js';
 import * as K from './calendar/kojoda.js';
+import { install, canInstall, isStandalone } from './install.js';
 
 const $ = id => document.getElementById(id);
 const todayG = K.todayParts(), kt = K.fromGregorian(todayG), M3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -31,7 +32,7 @@ function wireSearch() {
   input.addEventListener('input', async () => {
     const q = input.value.trim(); if (q.length < 2) return close();
     const res = await searchAll(q, pool);
-    if (!res.length) { box.innerHTML = '<li class="none">No matches yet. Press Search to look on the map.</li>'; box.hidden = false; return; }
+    if (!res.length) { box.innerHTML = '<li class="none">No matches yet. Press Search to look everywhere.</li>'; box.hidden = false; return; }
     box.innerHTML = res.map((r, i) => `<li role="option" id="sg${i}"><a href="${r.href}"><span class="k">${esc(r.kind)}</span><b>${esc(r.title)}</b><small>${esc(r.sub)}</small></a></li>`).join(''); box.hidden = false; input.setAttribute('aria-expanded', 'true'); idx = -1;
   });
   input.addEventListener('keydown', e => {
@@ -78,9 +79,8 @@ function festivalCard() {
   todayCard(); wireSearch();
   // topics
   $('topics').innerHTML = TOPICS.map(t => `<a class="topic reveal" href="/posts/?topic=${t}"><span aria-hidden="true">${TOPIC_ICON[t]}</span><b>${TOPIC_LABEL[t]}</b></a>`).join('');
-  $('install-btn').addEventListener('click', async () => { if (window.__installPrompt) { window.__installPrompt.prompt(); await window.__installPrompt.userChoice; window.__installPrompt = null; } else alert('Use your browser menu: “Install app” or “Add to Home Screen”.'); });
-  addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.__installPrompt = e; });
-  if (matchMedia('(display-mode: standalone)').matches) $('install-cta').hidden = true;
+  $('install-btn').addEventListener('click', () => install());
+  if (isStandalone()) $('install-cta').hidden = true;
   try {
     const [cm, articles, events, quiz, ...lib] = await Promise.all([loadCommunities(), loadArticles(), loadEvents(), loadQuizRows().catch(() => []), ...['heritage_records', 'landmarks', 'people', 'institutions', 'organisations'].map(k => loadLibrary(k).catch(() => []))]);
     const comms = cm.rows, records = lib.flat(); pool = { communities: comms, articles, records: lib[0] };

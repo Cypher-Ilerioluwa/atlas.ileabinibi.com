@@ -9,18 +9,23 @@ const fail = e => toast(e.message || 'Something went wrong.', 6000);
 const $ = id => document.getElementById(id);
 let ctx, api, host, panel, communities = [];
 
+const CONTENT = () => Object.keys(TABLES).filter(k => k !== 'media_shares');
 export async function mountAdmin(el, c) {
   ctx = c; api = c.api; host = el;
-  const nav = [['monitor', 'Monitoring'], ['submissions', 'Submissions'], ...(ctx.isAdmin ? [['users', 'Users']] : []),
-    ...Object.entries(TABLES).map(([k, v]) => [k, v.label]), ...(ctx.isAdmin ? [['messages', 'Messages'], ['push', 'Push notifications'], ['sync', 'ileabinibi.com sync']] : []), ['corrections', 'Corrections'], ...(ctx.isAdmin ? [['audit', 'Audit trail']] : []), ['functions', 'All functions']];
-  host.innerHTML = `<div class="admin-wrap"><h2>Admin</h2><div class="subnav" id="subnav" role="group" aria-label="Admin sections">${nav.map(([k, t]) => `<button class="chip" type="button" data-s="${k}" aria-pressed="false">${esc(t)}</button>`).join('')}</div><div id="apanel" class="panel"></div></div>`;
+  const primary = [['monitor', 'Monitoring'], ['submissions', 'Submissions'], ...(ctx.isAdmin ? [['users', 'Users']] : []), ['content', 'Content'], ['media_shares', 'Music'],
+    ...(ctx.isAdmin ? [['messages', 'Messages'], ['push', 'Push'], ['sync', 'Website import']] : []), ['corrections', 'Corrections'], ...(ctx.isAdmin ? [['audit', 'Audit trail']] : []), ['functions', 'All functions']];
+  host.innerHTML = `<div class="admin-wrap"><h2>Admin</h2><div class="navtabs subnav" id="subnav" role="tablist" aria-label="Admin sections">${primary.map(([k, t]) => `<button class="chip" type="button" role="tab" data-s="${k}" aria-pressed="false">${esc(t)}</button>`).join('')}</div>
+    <div class="navtabs subnav second" id="subnav2" role="tablist" aria-label="Content sections" hidden>${CONTENT().map(k => `<button class="chip" type="button" role="tab" data-s="${k}" aria-pressed="false">${esc(TABLES[k].label)}</button>`).join('')}</div><div id="apanel" class="panel"></div></div>`;
   panel = $('apanel');
-  $('subnav').onclick = e => { const b = e.target.closest('[data-s]'); if (b) show(b.dataset.s); };
+  host.querySelectorAll('#subnav, #subnav2').forEach(n => n.onclick = e => { const b = e.target.closest('[data-s]'); if (b) show(b.dataset.s); });
   try { communities = await api.list('communities'); } catch {}
   show('monitor');
 }
 async function show(s) {
-  document.querySelectorAll('#subnav .chip').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.s === s)));
+  if (s === 'content') s = lastContent;
+  const isContent = CONTENT().includes(s); if (isContent) lastContent = s;
+  host.querySelectorAll('#subnav [data-s]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.s === (isContent ? 'content' : s))));
+  $('subnav2').hidden = !isContent; host.querySelectorAll('#subnav2 [data-s]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.s === s)));
   panel.innerHTML = '<div class="loading"><span class="spinner"></span> Loading…</div>';
   try {
     if (s === 'monitor') await monitor(); else if (s === 'submissions') await submissions(); else if (s === 'users') await users();
@@ -28,6 +33,7 @@ async function show(s) {
     else if (s === 'corrections') await corrections(); else if (s === 'audit') await audit(); else functions();
   } catch (e) { panel.innerHTML = `<div class="empty"><h3>Could not load</h3><p>${esc(e.message)}</p></div>`; }
 }
+let lastContent = 'articles';
 
 async function monitor() {
   const c = await api.counts(), pending = c.sub_submitted + c.sub_under_review;
@@ -73,10 +79,10 @@ async function content(table) {
   const draw = () => {
     const list = rows.filter(r => (st === 'all' || r.status === st) && (!q || String(r[def.title]).toLowerCase().includes(q)));
     panel.querySelector('tbody').innerHTML = list.map(r => `<tr><td><b>${esc(String(r[def.title]).slice(0, 90))}</b>${hasSlug ? `<br><span class="muted small">/${esc(r.slug)}</span>` : ''}</td><td><span class="badge ${r.status === 'published' ? 'documented' : 'scholarly_interpretation'}">${esc(r.status)}</span></td><td>${fmt(r.updated_at || r.created_at)}</td>
-      <td class="acts"><button class="chip" data-a="edit" data-id="${r.id}">Edit</button> <button class="chip" data-a="toggle" data-id="${r.id}">${r.status === 'published' ? 'Unpublish' : 'Publish'}</button>${ctx.isAdmin ? ` <button class="chip" data-a="del" data-id="${r.id}">Delete</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">Nothing here yet.</td></tr>';
+      <td class="acts"><button class="chip" data-a="edit" data-id="${r.id}">Edit</button> <button class="chip" data-a="toggle" data-id="${r.id}">${r.status === 'published' ? (table === 'media_shares' ? 'Hide' : 'Unpublish') : 'Publish'}</button>${ctx.isAdmin ? ` <button class="chip" data-a="del" data-id="${r.id}">Delete</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">Nothing here yet.</td></tr>';
   };
-  panel.innerHTML = `<div class="section-head"><h3 style="margin:0">${esc(def.label)}</h3><span><button class="btn btn-ghost" data-a="pubAll">Publish all drafts</button> <button class="btn" data-a="new">New</button></span></div>
-  <div class="bar"><input type="search" id="fq" placeholder="Filter" aria-label="Filter by name"><select id="fs" aria-label="Filter by status"><option value="all">All statuses</option><option>draft</option><option>published</option><option>archived</option></select></div>
+  panel.innerHTML = `<div class="section-head"><h3 style="margin:0">${esc(def.label)}</h3>${def.noNew ? '' : '<span><button class="btn btn-ghost" data-a="pubAll">Publish all drafts</button> <button class="btn" data-a="new">New</button></span>'}</div>
+  <div class="bar"><input type="search" id="fq" placeholder="Filter" aria-label="Filter by name"><select id="fs" aria-label="Filter by status"><option value="all">All statuses</option><option>draft</option><option>published</option><option>hidden</option><option>archived</option></select></div>
   <table class="tbl"><thead><tr><th>Name</th><th>Status</th><th>Updated</th><th>Actions</th></tr></thead><tbody></tbody></table>`;
   draw(); $('fq').oninput = e => { q = e.target.value.toLowerCase(); draw(); }; $('fs').onchange = e => { st = e.target.value; draw(); };
   const refresh = async () => { rows = await api.list(table); draw(); };
@@ -92,7 +98,7 @@ async function content(table) {
         toast(`Published ${done} of ${drafts.length}.`); return refresh();
       }
       if (b.dataset.a === 'edit') return edit(def, table, row, refresh);
-      if (b.dataset.a === 'toggle') { const pub = row.status !== 'published'; await api.save(table, { id: row.id, status: pub ? 'published' : 'draft', ...(pub && table === 'articles' ? { published_at: row.published_at || new Date().toISOString() } : {}) }); toast(pub ? 'Published.' : 'Unpublished.'); await refresh(); }
+      if (b.dataset.a === 'toggle') { const pub = row.status !== 'published'; await api.save(table, { id: row.id, status: pub ? 'published' : (table === 'media_shares' ? 'hidden' : 'draft'), ...(pub && table === 'articles' ? { published_at: row.published_at || new Date().toISOString() } : {}) }); toast(pub ? 'Published.' : 'Unpublished.'); await refresh(); }
       if (b.dataset.a === 'del' && confirm(`Delete “${row[def.title]}” permanently? This cannot be undone.`)) { await api.remove(table, row.id); toast('Deleted.'); await refresh(); }
     } catch (err) { fail(err); }
   };
@@ -207,14 +213,14 @@ function push() {
 }
 
 function sync() {
-  panel.innerHTML = `<h3>Import from ileabinibi.com</h3><p>Posts tagged <b>atlas</b> on ileabinibi.com are imported every hour into the matching section. Their other tags say which section, topic and community they belong to.</p>
+  panel.innerHTML = `<h3>Website import</h3><p>Posts tagged <b>atlas</b> on your WordPress site are imported every hour. Only new or changed posts are downloaded. Topic and community are worked out from the post's ordinary tags, or set exactly with the tags below.</p>
   <div class="card" style="margin-bottom:var(--space-4)"><b>Tags to use on WordPress</b><ul style="margin:.5rem 0 0;padding-left:1.2rem">
   <li><code>atlas</code>: import this post</li><li><code>atlas:type:article</code> (or event, heritage, landmark, person, institution, organisation)</li><li><code>atlas:topic:history</code> (history, people, language, culture, food, spirituality, names, popular_event)</li>
   <li><code>atlas:community:ile-ife</code>: the community’s slug</li><li><code>atlas:editor:Ọlá Adé</code>: one tag per co-editor</li><li><code>atlas:date:2026-08-14</code> and optional <code>atlas:enddate:2026-08-16</code>: for events</li><li><code>atlas:category:craft</code>: for heritage records</li></ul></div>
   <p><button class="btn btn-ghost" type="button" id="wcheck">Check connection</button> <button class="btn" type="button" id="wsync">Sync now</button></p><div id="wres" role="status"></div>`;
   $('wcheck').onclick = async () => { try { const r = await api.wpStatus(); $('wres').innerHTML = r.ready ? '<p>The import function is deployed and configured.</p>' : `<p>The import function is deployed, but these Netlify settings are missing: <b>${esc((r.missing || []).join(', '))}</b>.</p>`; } catch (err) { $('wres').textContent = 'Could not reach the import function: ' + err.message; } };
   $('wsync').onclick = async e => { const b = e.target; b.disabled = true; $('wres').innerHTML = '<div class="loading"><span class="spinner"></span> Importing…</div>';
-    try { const r = await api.wpSync(); $('wres').innerHTML = `<div class="card"><b>Done.</b> Found ${r.found} tagged post${r.found === 1 ? '' : 's'}. New: ${r.created}. Updated: ${r.updated}. Archived (tag removed): ${r.archived}.${r.errors?.length ? `<br>Problems:<ul>${r.errors.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}</div>`; } catch (err) { $('wres').textContent = 'Import failed: ' + err.message; } b.disabled = false; };
+    try { const r = await api.wpSync(); $('wres').innerHTML = `<div class="card"><b>Done.</b> Found ${r.found} tagged post${r.found === 1 ? '' : 's'}; ${r.checked ?? r.found} new or changed. New: ${r.created}. Updated: ${r.updated}. Archived (tag removed): ${r.archived}.${r.errors?.length ? `<br>Problems:<ul>${r.errors.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}</div>`; } catch (err) { $('wres').textContent = 'Import failed: ' + err.message; } b.disabled = false; };
 }
 
 async function corrections() {

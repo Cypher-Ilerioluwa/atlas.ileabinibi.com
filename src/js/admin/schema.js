@@ -13,6 +13,7 @@ const status = sel('status', 'Publication status', STATUS, { required: true });
 const evidence = sel('evidence', 'Evidence label', EVIDENCE, { required: true });
 
 export const TABLES = {
+  media_shares: { label: 'Shared music', title: 'title', noNew: true, fields: [t('title', 'Title', { required: true }), t('artist', 'Artist or curator'), ta('note', 'Note'), sel('status', 'Visibility', ['published', 'hidden'], { required: true })] },
   articles: { label: 'Articles', title: 'title', fields: [
     t('slug', 'URL slug (auto if empty)'), t('title', 'Title', { required: true }),
     sel('topic', 'Topic', ['history','people','language','culture','food','spirituality','names','popular_event'], { required: true }),
@@ -65,7 +66,9 @@ export const FUNCTIONS = [
   ['Public', 'Library: heritage records, landmarks, people, institutions, organisations', 'Built'],
   ['Credits', 'Authors and co-editors on every item; contributor pages listing all their work', 'Built'],
   ['Calendar', 'Kọ́jọ́dá calendar, Gregorian view, converter, festivals; checked against the original code', 'Built and tested'],
-  ['Community hub', 'Chat with replies, reactions, read receipts, typing, online users; quiz, guess game, proverbs', 'Built, live chat needs Supabase'],
+  ['Community hub', 'Messenger-style chat: room list, replies, reactions, photos, mentions, edit, pin, read receipts, typing, online users; quiz, guess game, proverbs', 'Built, live chat needs Supabase'],
+  ['Media', 'Share music and playlists from Spotify, Apple Music, YouTube, SoundCloud, Audiomack, Deezer, Tidal and Boomplay to communities, with a player and invitations', 'Built, platform players untested'],
+  ['Social', 'Likes, saves, comments and reading time on posts; search page; live unread badges', 'Built, needs Supabase'],
   ['Accounts', 'Sign in, create account, forgot and reset password, sign out', 'Built, needs Supabase'],
   ['Dashboard', 'Overview, Account, Posts, Notifications, Settings, delete account', 'Built, needs Supabase'],
   ['Contribute', 'Article, correction and event forms with required location, consent and files', 'Built, needs Supabase'],
@@ -75,5 +78,5 @@ export const FUNCTIONS = [
   ['PWA', 'App-style bottom bar, offline shell, update check, install button', 'Built, device testing pending'],
   ['SEO', 'Sitemap, robots, canonical, meta for static pages', 'Built'],
   ['SEO', 'Static crawlable page per post and community', 'Not built (pages load by script)'],
-  ['Database', 'Schema, RLS, storage, approval, credits, chat, admin functions (9 SQL files)', 'Written, run in order']
+  ['Database', 'Schema, RLS, storage, approval, credits, chat, admin functions (11 SQL files)', 'Written, run in order']
 ];
