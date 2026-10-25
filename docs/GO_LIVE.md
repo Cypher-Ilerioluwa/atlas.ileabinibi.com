@@ -50,7 +50,7 @@ If a folder is missing, click **Add file > Upload files** and drag just that fol
 
 ### D1. Run the database files, in order
 
-> **Already ran some files?** Run only the ones you have not run yet, in number order. If you ran 0001 to 0007 before this update, run just **0008** now, then `0006_selfcheck.sql` again.
+> **Already ran some files?** Run only the ones you have not run yet, in number order. If you ran 0001 to 0008 before this update, run just **0009** and **0010** now, then `0006_selfcheck.sql` again.
 
 Use **Supabase > SQL Editor > New query** for every file. For each file: in GitHub open `supabase` > `migrations` > the file, click the **Copy raw file** icon (two squares, top right), paste into a new Supabase query, press **Run**, and wait for "Success" before the next one. Do not run two files in the same query tab.
 
@@ -61,7 +61,9 @@ Use **Supabase > SQL Editor > New query** for every file. For each file: in GitH
 5. `0005_storage.sql`
 6. `0007_publish_content.sql` (publishes the pilot content from your prototype)
 7. `0008_community_features.sql` (contributors and credits, imports from ileabinibi.com, chat replies, reactions and read receipts)
-8. `0006_selfcheck.sql` last: it changes nothing and shows OK or MISSING for each part
+8. `0009_social_chat.sql` (chat photos, edit and pin, likes and comments, formatted imported posts, live notification badges)
+9. `0010_media.sql` (shared music and playlists)
+10. `0006_selfcheck.sql` last: it changes nothing and shows OK or MISSING for each part
 
 **If a file fails**
 1. Do not run the later files. Scroll the result panel and copy the **red error message in full** (it names the line). Send it to me; one error message is all I need.
@@ -75,20 +77,20 @@ Run `0006_selfcheck.sql`. Every row must say **OK**:
 
 | Check | Meaning |
 |---|---|
-| Tables created (33) | The database tables exist |
+| Tables created (36) | The database tables exist |
 | Tables with security OFF (0) | Every table is protected |
 | Public views (11) | Public pages can read published content |
 | Key functions (10) | Approval, admin, credits and search functions exist |
 | Sign-up trigger / Admin trigger | New accounts get a profile; your admin email is recognised |
-| Storage buckets (3), Private bucket is private | Upload areas exist; private uploads are not public |
-| Storage access rules (10) | Who may upload or read files |
-| Live chat switched on (3) | Messages, reactions and read receipts update instantly |
+| Storage buckets (4), Private bucket is private | Upload areas exist (including chat photos); private uploads are not public |
+| Storage access rules (13) | Who may upload or read files |
+| Live updates switched on (4) | Chat, reactions, read receipts and notification badges update instantly |
 
 **If a check says MISSING**, fix only that item:
 - **Sign-up trigger or Admin trigger missing:** Supabase did not allow the SQL to attach to the user table. Contact me with the warning text; meanwhile the manual admin SQL in Part I still works, but new sign-ups will not get a profile row until this is fixed.
-- **Storage buckets missing:** Dashboard > **Storage > New bucket**. Create `public-media` (public), `avatars` (public), `private-submissions` (**not** public).
+- **Storage buckets missing:** Dashboard > **Storage > New bucket**. Create `public-media` (public), `avatars` (public), `chat-media` (public) and `private-submissions` (**not** public).
 - **Storage access rules missing (fewer than 10):** Dashboard > **Storage > Policies**, or send me the warning and I will give the exact rules to paste in the policy editor. Without them, uploads (pictures and attachments) will be refused, but everything else works.
-- **Live chat switched on missing:** Dashboard > **Database > Publications > supabase_realtime**, switch on the tables `chat_messages`, `chat_reactions` and `chat_reads`.
+- **Live chat switched on missing:** Dashboard > **Database > Publications > supabase_realtime**, switch on the tables `chat_messages`, `chat_reactions`, `chat_reads` and `notifications`.
 
 ### D3. Copy your keys
 Supabase > **Project Settings > API** (may be named "API Keys"). Copy into your password manager:
@@ -318,30 +320,42 @@ Use three accounts: you (admin), a second email as a **member**, a third as an *
 
 ---
 
-## Part Q. Automatic posts from ileabinibi.com
+## Part Q. Automatic posts from ileabinibi.com (WordPress)
 
-The Atlas can pull posts from your WordPress site and publish them in the right section, with the right community, topic, author and co-editors. It uses **tags** that you add to the WordPress post. Nothing on the WordPress site needs to be installed.
+**What is confirmed:** your WordPress REST address `https://ileabinibi.com/wp-json/wp/v2/posts` is public and working, the tag **atlas** exists (id 140) and 10 posts already carry it. No password is needed to read published posts.
 
-### Tags to add on WordPress (Posts > edit a post > Tags)
+**How it works:** every hour a Netlify function asks WordPress for the list of posts tagged `atlas` (just ids and last-modified times), downloads only the posts that are new or changed, and saves them in the Atlas keyed by the WordPress post number, so a re-run updates instead of duplicating. A post that is unpublished, trashed or loses the tag is hidden in the Atlas too (archived, not deleted). Imported posts open inside the Atlas like any other post: same layout, headings, lists, tables and pictures, with comments, likes and saves. Readers are not shown that they came from WordPress, and links to other pages of your own site are removed (links to other imported posts become in-app links). The original address is stored out of sight and used as the page's canonical link.
+
+### What the importer works out by itself
+If a post has none of the special tags, the importer uses your ordinary WordPress tags and categories: words such as *language, food, festival, history, ifa, orisha* pick the topic, and tags such as *lagos, ijebu, oyo, ife, ibadan* pick the community. WordPress user names like "admin" are credited as "Ilẹ̀ Abínibí Editorial" (change it with the `WP_AUTHOR_NAME` setting).
+
+### Tags you can add to take control (WordPress > Posts > edit > Tags)
 | Tag (type it exactly) | Meaning |
 |---|---|
-| `atlas` | **Required.** Import this post into the Atlas |
+| `atlas` | **Required.** Import this post |
 | `atlas:type:article` | Where it goes: `article` (default), `event`, `heritage`, `landmark`, `person`, `institution`, `organisation` |
 | `atlas:topic:history` | For articles: `history`, `people`, `language`, `culture`, `food`, `spirituality`, `names`, `popular_event` |
-| `atlas:community:ile-ife` | The community's short name (its slug, as in the Atlas address `/city/?c=ile-ife`) |
+| `atlas:community:ile-ife` | The community's short name (slug, as in the Atlas address `/city/?c=ile-ife`) |
 | `atlas:editor:Ọlá Adé` | One tag per co-editor. The WordPress **author** is the lead author |
 | `atlas:date:2026-08-14` | For events: start date. Optional end date: `atlas:enddate:2026-08-16` |
 | `atlas:category:craft` | For heritage records (`oral_history`, `craft`, `practice`, …) or the category of an organisation |
 
-Example: a post about Ilé-Ifẹ̀ history, written by Ada Obi and edited by Tunde Bello, gets the tags `atlas`, `atlas:topic:history`, `atlas:community:ile-ife`, `atlas:editor:Tunde Bello`.
+### Settings in Netlify (Site configuration > Environment variables)
+You already have `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`; the importer uses them. All of these are optional:
+| Name | Purpose |
+|---|---|
+| `WP_BASE_URL` | Your WordPress address. Default `https://ileabinibi.com` |
+| `WP_AUTHOR_NAME` | The credit used instead of a raw WordPress user name such as "admin" |
+| `WP_USER` and `WP_APP_PASSWORD` | Only if WordPress ever blocks anonymous reading (a security plugin that limits the REST API). See below |
 
-### How it runs
-1. Deploy the update (the import functions are in the `netlify` folder). In Netlify > Environment variables you already have `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`; the import uses the same two. Optional: `WP_BASE_URL` (defaults to `https://ileabinibi.com`).
-2. It runs **every hour** by itself. To run it now: Dashboard > **Admin > ileabinibi.com sync > Sync now**. **Check connection** confirms the function is deployed and configured.
-3. New posts appear in the Atlas with the cover picture, a "Read the original" link back to ileabinibi.com, and the author and editors listed. Changing the post on WordPress updates the Atlas copy at the next import. If you remove the `atlas` tag or delete the post, the Atlas copy is archived (hidden), not deleted.
-4. WordPress must allow the public REST API (the default). If a security plugin or firewall blocks it, the sync panel shows the error; allow requests to `/wp-json/wp/v2/` for the user agent `IleAbinibiAtlasSync`.
+### Do I need an application password?
+**Not today:** your site's published posts are readable without one. Create one only if the import starts failing with "answered 401 or 403". Then: WordPress > **Users > Profile** (best: create a separate user with the **Subscriber** or **Contributor** role just for this) > scroll to **Application Passwords** > name it "Atlas import" > **Add New Application Password** > copy the password shown once. In Netlify add `WP_USER` (that user's login name) and `WP_APP_PASSWORD` (the password, mark it secret) and redeploy. Never put it in GitHub. It can be revoked at any time from the same WordPress screen.
 
-Note: scheduled functions run only on the published production deploy.
+### Running and checking it
+- Dashboard > **Admin > Website import**: **Check connection** shows whether the function is deployed and configured; **Sync now** imports straight away and reports: found, checked (changed), new, updated, archived, and any problems.
+- It also runs by itself every hour on the published production site.
+- If a firewall blocks the function, allow requests to `/wp-json/wp/v2/` from the user agent `IleAbinibiAtlasSync`.
+- Wording note: imported posts keep your own words. "Yoruba" is not auto-replaced by "Abínibí" in them, because that would also change titles, quotations and tables. Tell me if you want that applied.
 
 ## Part R. Credits and contributor pages
 
@@ -349,6 +363,32 @@ Every post, event and record shows who wrote and edited it. The first name is th
 - **Members' submissions:** when you approve a submission, its author is credited automatically. When you approve a correction, the person who sent it is added as an editor.
 - **Editing credits by hand:** Admin > any content section > Edit > "Credits": one person per line as `Name | role`, the first line being the author.
 - **Imported posts:** credits come from the WordPress author and the `atlas:editor:` tags.
+
+## Part S. Media: music and playlists
+
+**Where:** the **Media** page (menu: after Community). Members share a track, album, playlist or video **to a community**; everyone can play it right there. Nothing is uploaded: the music stays on the streaming platform, so there is nothing to host and no copyright files to store.
+
+**Accepted platforms (only these):** Spotify, Apple Music, YouTube, YouTube Music, SoundCloud, Audiomack, Deezer, Tidal and Boomplay. Any other link is refused, both on the page and in the database. Boomplay does not allow playing inside other apps, so its items show an "Open in Boomplay" button.
+
+**How the player works**
+- **Play** on any card loads the platform's own player in the player panel (it stays at the top on phones). Play, pause, volume and seeking are the platform's controls; some platforms play only a preview unless the listener is signed in to that platform in the same browser.
+- **Next / Previous** move through the list you are looking at (the filters and tabs apply). YouTube videos and SoundCloud tracks also move to the next item by themselves when they end; the other platforms need a tap on Next.
+- **Listening now** shows how many members have the same item open, live.
+- **Like** a track; **Share to a community** adds it to another community's list. Sharing stays inside the Atlas: there is no copy-link or share-outside button.
+- **Invite to listen together** posts an invitation card (with an optional time) and also drops a message with a link into that community's chat room.
+
+**Setting it up**
+1. Run `0010_media.sql` (Part D1).
+2. Deploy the update (the title lookup function `media-meta` is in the `netlify` folder). It fills in the title, artist and cover automatically for Spotify, YouTube, SoundCloud and Deezer from the pasted link; for the others the member types the title. It needs no extra settings.
+3. Moderation: Dashboard > **Admin > Music** lists every share with **Hide** and Edit; deleting is for admins. Members are limited to one share every 20 seconds and 15 a day.
+4. Not tested here: the live platform players and the automatic next-track for YouTube and SoundCloud depend on those companies' players, which I could not load from my environment. Test one link from each platform you care about after deploying.
+
+## Part T. Notifications, the phone app and iPhone
+
+- **Unread badges:** a red number appears next to **Dashboard** in the top menu, on the profile icon on phones, on the Notifications tab, in the browser tab title and on the app icon (where the phone allows it). New notifications arrive live, with a short pop-up message.
+- **Install on Android and computers:** a small prompt offers to install after a couple of visits, and there is an Install button in More and in Settings.
+- **Install on iPhone and iPad:** Apple does not allow any website to add itself to the Home Screen automatically. The Atlas shows a guide (Share, then Add to Home Screen, then Add) from the More sheet, Settings and a polite banner after a few visits. Once installed from Safari it opens full screen like an app, and push notifications work on iPhone only after this step (iOS 16.4 or later).
+- **Confirming push:** the address `https://YOUR-SITE.netlify.app/.netlify/functions/send-push` shows `"ready": true` when the four Netlify settings are present. Real delivery is confirmed by turning push on in a signed-in phone's Settings and sending a test from Admin > Push.
 
 ## Part P. Not built yet
 
