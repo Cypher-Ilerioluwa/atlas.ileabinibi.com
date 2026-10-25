@@ -78,5 +78,5 @@ export const FUNCTIONS = [
   ['PWA', 'App-style bottom bar, offline shell, update check, install button', 'Built, device testing pending'],
   ['SEO', 'Sitemap, robots, canonical, meta for static pages', 'Built'],
   ['SEO', 'Static crawlable page per post and community', 'Not built (pages load by script)'],
-  ['Database', 'Schema, RLS, storage, approval, credits, chat, admin functions (11 SQL files)', 'Written, run in order']
+  ['Database', 'Schema, RLS, storage, approval, credits, chat, admin functions (12 SQL files)', 'Written, run in order']
 ];

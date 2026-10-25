@@ -36,7 +36,7 @@ function seedBase() {
     organisations: seed.organisations.map(o => ({ ...base(), ...o, community_id: cid(o.community) })),
     proverbs: seed.proverbs.map(p => ({ ...base(), ...p })),
     quiz_questions: seed.quiz_questions.map(q => ({ ...base(), ...q })),
-    contributors: [{ id: 'ct-proto', slug: 'ile-abinibi-atlas-prototype', display_name: 'Ilẹ̀ Abínibí Atlas prototype', avatar_path: null, bio: 'Pilot content from the first Atlas prototype.' },
+    contributors: [{ id: 'ct-proto', slug: 'ile-abinibi', display_name: 'Ilẹ̀ Abínibí', avatar_path: null, bio: 'The Ilẹ̀ Abínibí team. Author of everything in the Atlas.' },
                    { id: 'ct-editor', slug: 'sample-editor', display_name: 'Sample editor', avatar_path: null, bio: 'A sample editor shown in the preview.' }],
     content_contributors: [],
     media_shares: [{ id: 'm-sample', user_id: 'demo-other', community_id: 'c-ile-ife', platform: 'spotify', kind: 'playlist', url: 'https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M', title: 'Sample: a Spotify playlist', artist: 'Preview item', note: 'This is a sample so you can try the player. Share your own below.', cover_url: null, invite: false, listen_at: null, shared_from: null, author_name: 'Sample editor', author_avatar: null, author_role: 'editor', status: 'published', created_at: new Date().toISOString() }],

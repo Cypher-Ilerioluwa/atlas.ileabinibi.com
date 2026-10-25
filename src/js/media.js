@@ -4,7 +4,9 @@ import { isConfigured } from './core.js';
 import { demoStore, demoSave, newId } from './api.js';
 import { parseMediaUrl } from './media-embed.js';
 
-const must = ({ data, error }) => { if (error) throw new Error(error.message); return data; };
+const friendly = m => (/schema cache|media_shares|does not exist|relation .* not found/i.test(m || '')
+  ? 'Music sharing is not switched on yet. An administrator needs to run supabase/migrations/0010_media.sql in Supabase (see docs/GO_LIVE.md, Part S).' : m);
+const must = ({ data, error }) => { if (error) throw new Error(friendly(error.message)); return data; };
 export async function loadMedia() {
   if (!isConfigured()) return [...demoStore().media_shares].filter(m => m.status === 'published').sort((a, b) => b.created_at.localeCompare(a.created_at));
   return must(await (await getClient()).from('media_shares').select('*').eq('status', 'published').order('created_at', { ascending: false }).limit(300));

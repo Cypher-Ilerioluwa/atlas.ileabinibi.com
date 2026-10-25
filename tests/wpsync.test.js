@@ -14,7 +14,7 @@ test('posts without the atlas tag are ignored', () => { assert.equal(parsePost(p
 test('article with topic, community, editors and author', () => {
   const p = parsePost(post(['atlas', 'atlas:topic:History', 'atlas:community:ile-ife', 'atlas:editor:Ọlá Adé', 'atlas:editor:Tunde Bello']));
   assert.equal(p.table, 'articles'); assert.equal(p.topic, 'history'); assert.equal(p.communitySlug, 'ile-ife');
-  assert.deepEqual(p.editors, ['Ọlá Adé', 'Tunde Bello']); assert.equal(p.author, 'Ada Obi'); assert.equal(p.title, 'Ọ̀ṣun & the grove – a visit');
+  assert.deepEqual(p.editors, ['Ọlá Adé', 'Tunde Bello']); assert.equal(p.author, 'Ilẹ̀ Abínibí'); assert.equal(p.wpAuthor, 'Ada Obi'); assert.equal(p.title, 'Ọ̀ṣun & the grove – a visit');
   assert.equal(p.summary, 'Short summary.'); assert.match(p.body, /First paragraph\.\n\nSecond one\.\nLine two\./); assert.equal(p.cover, 'https://ileabinibi.com/img.jpg'); assert.equal(p.publishedAt, '2026-10-01T09:30:00Z');
 });
 test('event with dates; unknown topic falls back; bad dates are dropped', () => {
@@ -58,7 +58,7 @@ test('a full import creates, updates, credits and archives (regression: archive 
     const db = fakeDb(tables), r = await runSync({ db });
     assert.deepEqual([r.found, r.checked, r.created, r.updated, r.archived, r.errors.length], [2, 2, 2, 0, 1, 0]);
     assert.equal(tables.articles.find(a => a.id === 'old1').status, 'archived');
-    const art = tables.articles.find(a => a.external_id === 77); assert.equal(art.topic, 'history'); assert.equal(art.community_id, 'c1'); assert.equal(art.author_credit, 'Ada Obi');
+    const art = tables.articles.find(a => a.external_id === 77); assert.equal(art.topic, 'history'); assert.equal(art.community_id, 'c1'); assert.equal(art.author_credit, 'Ilẹ̀ Abínibí');
     assert.match(art.body_html, /<p>First paragraph\.<\/p>/); assert.ok(!/script/.test(art.body_html)); assert.equal(tables.events[0].date_start, '2026-08-14'); assert.equal(tables.events[0].confidence, 'confirmed');
     const credits = tables.content_contributors.filter(c => c.content_id === art.id); assert.deepEqual(credits.map(c => c.role), ['author', 'editor']);
     const again = await runSync({ db });   // nothing changed on WordPress: nothing is downloaded or duplicated
@@ -89,9 +89,26 @@ test('topic and community are inferred from ordinary WordPress tags when no atla
   assert.equal(inferCommunity(['lagos']), 'eko'); assert.equal(inferCommunity(['ijebu']), 'ijebu-ode'); assert.equal(inferCommunity(['oyo', 'tribal-marks']), 'oyo-ile'); assert.equal(inferCommunity(['yoruba-culture']), null);
   const p = parsePost({ ...post(['atlas', 'yoruba-food', 'lagos']), id: 1071 }); assert.equal(p.topic, 'food'); assert.equal(p.communitySlug, 'eko');
 });
-test('raw WordPress user names become an editorial credit', () => {
+test('the author of every imported post is Ilẹ̀ Abínibí, whoever wrote it on WordPress', () => {
   const mk = name => parsePost({ ...post(['atlas']), _embedded: { ...post(['atlas'])._embedded, author: [{ name }] } }).author;
-  assert.equal(mk('admin'), 'Ilẹ̀ Abínibí Editorial'); assert.equal(mk('Ada Obi'), 'Ada Obi');
+  assert.equal(mk('admin'), 'Ilẹ̀ Abínibí'); assert.equal(mk('Ada Obi'), 'Ilẹ̀ Abínibí'); assert.equal(mk(''), 'Ilẹ̀ Abínibí');
+});
+test('plain tags History, People, Language, Culture, Food, Spirituality, Names, Popular events choose the topic', () => {
+  const t = name => parsePost(post(['atlas', name])).topic;
+  assert.deepEqual(['History', 'People', 'Language', 'Culture', 'Food', 'Spirituality', 'Names', 'Popular events'].map(t),
+    ['history', 'people', 'language', 'culture', 'food', 'spirituality', 'names', 'popular_event']);
+  assert.equal(t('popular-events'), 'popular_event'); assert.equal(t('FOOD'), 'food');
+});
+test('topic tag precedence: atlas:topic: wins, then a plain topic tag, then a guess; categories count too', () => {
+  assert.equal(parsePost(post(['atlas', 'Food', 'atlas:topic:history'])).topic, 'history');
+  assert.equal(parsePost(post(['atlas', 'Names', 'lagos'])).topic, 'names');
+  const viaCategory = parsePost({ ...post(['atlas']), _embedded: { ...post(['atlas'])._embedded, 'wp:term': [[{ taxonomy: 'category', name: 'Spirituality', slug: 'spirituality' }], [tag('atlas')]] } });
+  assert.equal(viaCategory.topic, 'spirituality');
+  assert.equal(parsePost(post(['atlas'])).topic, 'culture');   // no hint at all: default
+});
+test('links to other Atlas pages are absolute atlas.ileabinibi.com links that open in the same tab', () => {
+  const out = sanitizeHtml('<p><a href="https://ileabinibi.com/other/">next</a></p>', () => 'https://atlas.ileabinibi.com/post/?s=wp-9');
+  assert.equal(out, '<p><a href="https://atlas.ileabinibi.com/post/?s=wp-9">next</a></p>');
 });
 test('WordPress tables and figures survive sanitising', () => {
   const out = sanitizeHtml('<figure class="wp-block-table"><table class="x"><thead><tr><th>Yoruba</th><th>English</th></tr></thead><tbody><tr><td>Ṣẹ́rẹ́</td><td>January</td></tr></tbody></table></figure>');

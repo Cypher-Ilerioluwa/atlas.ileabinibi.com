@@ -9,7 +9,7 @@ export const seed = {
    "summary": "Abínibí belongs to the Niger-Congo family and is a tonal language with three tones: high (á), mid (unmarked) and low (à). Dot-below marks (ẹ, ọ, ṣ) change the sound…",
    "body": "Abínibí belongs to the Niger-Congo family and is a tonal language with three tones: high (á), mid (unmarked) and low (à). Dot-below marks (ẹ, ọ, ṣ) change the sound and the meaning. Dialects are often grouped as Northwest (Ọ̀yọ́, Ìbàdàn, Ẹ̀gbá), Central (Ifẹ̀, Ìjẹ̀ṣà, Ẹ̀kìtì) and Southeast (Òndó, Ìjẹ̀bú). Standard Abínibí grew mainly from Oyo-area speech and written usage.\n\nIn the Americas, Cuban Lucumí and Brazilian Candomblé preserve Abínibí liturgical language, songs and prayers.",
    "region_text": "Abínibí communities worldwide",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "under_review"
   },
@@ -21,7 +21,7 @@ export const seed = {
    "summary": "Ẹ kú àárọ̀: good morning\nẸ kú ìrọ̀lẹ́: good evening\nẸ ṣé: thank you\nIlẹ̀ abínibí: native land",
    "body": "Ẹ kú àárọ̀: good morning\nẸ kú ìrọ̀lẹ́: good evening\nẸ ṣé: thank you\nIlẹ̀ abínibí: native land",
    "region_text": "Abínibí communities worldwide",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "under_review"
   },
@@ -33,7 +33,7 @@ export const seed = {
    "summary": "A child is traditionally named at the naming ceremony (ìsọmọlórúkọ), commonly on the 7th day for girls, 8th for boys and 9th for twins. Names often carry meaning,…",
    "body": "A child is traditionally named at the naming ceremony (ìsọmọlórúkọ), commonly on the 7th day for girls, 8th for boys and 9th for twins. Names often carry meaning, family history and praise.\n\nÀmútọ̀runwá (names tied to birth circumstance): Táíwò and Kẹ́hìndé for twins, Ìdòwú for the child after twins, Àlàbá for the next, Dàda for a child born with locked hair, Ìgè for a breech birth.\n\nOrúkọ ìdílé (family names) often begin with a lineage or title element, such as Adé- (crown) or Ọlá- (wealth).\n\nOríkì are praise poems for a person, lineage or town.",
    "region_text": "Abínibí communities worldwide",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "under_review"
   },
@@ -45,7 +45,7 @@ export const seed = {
    "summary": "Traditional belief centres on Olódùmarè, the supreme being, and the òrìṣà, who relate to nature, society and human experience. Many Abínibí today are Christian or…",
    "body": "Traditional belief centres on Olódùmarè, the supreme being, and the òrìṣà, who relate to nature, society and human experience. Many Abínibí today are Christian or Muslim, and traditional practice continues alongside both.\n\nỌbàtálá: creation and purity\nÒgún: iron, the road and craft\nṢàngó: thunder, linked to Ọ̀yọ́ kingship\nỌ̀ṣun: river, fertility and healing, honoured at Òṣogbo\nYemọja: waters and motherhood\nỌya: the Niger, wind and change\nÈṣù: messenger of the crossroads\nỌ̀rúnmìlà: wisdom, associated with Ifá divination\n\nIfá divination was inscribed on UNESCO’s Intangible Cultural Heritage list in 2008. Diaspora names: Orixás (Brazil), Santos (Cuba).",
    "region_text": "Abínibí communities worldwide",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "under_review"
   },
@@ -57,7 +57,7 @@ export const seed = {
    "summary": "Egúngún: masquerades honouring ancestors\nGẹ̀lẹ̀dé: masked performance honouring women and elders; UNESCO-recognised in 2008\nDùndún: the hourglass talking drum\nAdìrẹ:…",
    "body": "Egúngún: masquerades honouring ancestors\nGẹ̀lẹ̀dé: masked performance honouring women and elders; UNESCO-recognised in 2008\nDùndún: the hourglass talking drum\nAdìrẹ: indigo resist-dyed cloth, strongly tied to Abẹ́òkúta\nAṣọ òkè: hand-woven strip cloth\nIfẹ̀ heads: naturalistic bronze and terracotta works, 12th to 15th centuries",
    "region_text": "Abínibí communities worldwide",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "under_review"
   },
@@ -69,7 +69,7 @@ export const seed = {
    "summary": "iyán, àmàlà, ẹ̀gúsí, ọbẹ̀ ẹ̀fọ́, ògì, mọ́í-mọ́í.",
    "body": "iyán, àmàlà, ẹ̀gúsí, ọbẹ̀ ẹ̀fọ́, ògì, mọ́í-mọ́í.",
    "region_text": "Abínibí communities worldwide",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "under_review"
   },
@@ -81,7 +81,7 @@ export const seed = {
    "summary": "Àkàrà became acarajé in Bahia.",
    "body": "Àkàrà became acarajé in Bahia.",
    "region_text": "Salvador, Bahia, Brazil",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "under_review"
   },
@@ -93,7 +93,7 @@ export const seed = {
    "summary": "Ọ̀ṣun-Òṣogbo (August)\nOjúde Ọba (Ìjẹ̀bú-Òde)\nÈyò (Èkó)\nOlójó (Ifẹ̀)\n\nDates and details are still to be added by editors.",
    "body": "Ọ̀ṣun-Òṣogbo (August)\nOjúde Ọba (Ìjẹ̀bú-Òde)\nÈyò (Èkó)\nOlójó (Ifẹ̀)\n\nDates and details are still to be added by editors.",
    "region_text": "Abínibí communities worldwide",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "under_review"
   },
@@ -105,7 +105,7 @@ export const seed = {
    "summary": "Abínibí tradition places the beginning of the Abínibí at Ilé-Ifẹ̀ with Odùduwà. Accounts differ on dates and details.",
    "body": "Abínibí tradition places the beginning of the Abínibí at Ilé-Ifẹ̀ with Odùduwà. Accounts differ on dates and details.",
    "region_text": "Ilé-Ifẹ̀, Nigeria",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "oral_tradition"
   },
@@ -117,7 +117,7 @@ export const seed = {
    "summary": "Ifẹ̀ produces naturalistic bronze and terracotta heads.",
    "body": "Ifẹ̀ produces naturalistic bronze and terracotta heads.",
    "region_text": "Ilé-Ifẹ̀, Nigeria",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "documented"
   },
@@ -129,7 +129,7 @@ export const seed = {
    "summary": "The Ọ̀yọ́ Empire grows under the Aláàfin and dominates much of the region.",
    "body": "The Ọ̀yọ́ Empire grows under the Aláàfin and dominates much of the region.",
    "region_text": "Ọ̀yọ́-Ilé, Nigeria",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "documented"
   },
@@ -141,7 +141,7 @@ export const seed = {
    "summary": "Ọ̀yọ́ declines. New centres such as Ìbàdàn and Abẹ́òkúta emerge from the wars and migrations of the 1820s–30s.",
    "body": "Ọ̀yọ́ declines. New centres such as Ìbàdàn and Abẹ́òkúta emerge from the wars and migrations of the 1820s–30s.",
    "region_text": "Ọ̀yọ́-Ilé, Nigeria",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "documented"
   },
@@ -153,7 +153,7 @@ export const seed = {
    "summary": "New centres such as Ìbàdàn and Abẹ́òkúta emerge from the wars and migrations of the 1820s–30s.",
    "body": "New centres such as Ìbàdàn and Abẹ́òkúta emerge from the wars and migrations of the 1820s–30s.",
    "region_text": "Ìbàdàn, Nigeria",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "documented"
   },
@@ -165,7 +165,7 @@ export const seed = {
    "summary": "New centres such as Ìbàdàn and Abẹ́òkúta emerge from the wars and migrations of the 1820s–30s.",
    "body": "New centres such as Ìbàdàn and Abẹ́òkúta emerge from the wars and migrations of the 1820s–30s.",
    "region_text": "Abẹ́òkúta, Nigeria",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "documented"
   },
@@ -177,7 +177,7 @@ export const seed = {
    "summary": "Freed Abínibí captives are resettled in Freetown. Their descendants are known as Aku.",
    "body": "Freed Abínibí captives are resettled in Freetown. Their descendants are known as Aku.",
    "region_text": "Freetown, Sierra Leone",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "documented"
   },
@@ -189,7 +189,7 @@ export const seed = {
    "summary": "Large numbers of Abínibí-speaking captives are carried to Bahia, Pernambuco and Cuba. They are called Nagô in Brazil and Lucumí in Cuba, and they rebuild religion,…",
    "body": "Large numbers of Abínibí-speaking captives are carried to Bahia, Pernambuco and Cuba. They are called Nagô in Brazil and Lucumí in Cuba, and they rebuild religion, language and community there.",
    "region_text": "Salvador, Bahia, Brazil",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "documented"
   },
@@ -201,7 +201,7 @@ export const seed = {
    "summary": "Large numbers of Abínibí-speaking captives are carried to Bahia, Pernambuco and Cuba. They are called Nagô in Brazil and Lucumí in Cuba, and they rebuild religion,…",
    "body": "Large numbers of Abínibí-speaking captives are carried to Bahia, Pernambuco and Cuba. They are called Nagô in Brazil and Lucumí in Cuba, and they rebuild religion, language and community there.",
    "region_text": "Recife, Brazil",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "documented"
   },
@@ -213,7 +213,7 @@ export const seed = {
    "summary": "Large numbers of Abínibí-speaking captives are carried to Bahia, Pernambuco and Cuba. They are called Nagô in Brazil and Lucumí in Cuba, and they rebuild religion,…",
    "body": "Large numbers of Abínibí-speaking captives are carried to Bahia, Pernambuco and Cuba. They are called Nagô in Brazil and Lucumí in Cuba, and they rebuild religion, language and community there.",
    "region_text": "Havana, Cuba",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "documented"
   },
@@ -225,7 +225,7 @@ export const seed = {
    "summary": "Some Brazilian and Cuban returnees settle in Lagos, Ouidah and Porto-Novo. In Lagos the descendants are known as Àgùdà.",
    "body": "Some Brazilian and Cuban returnees settle in Lagos, Ouidah and Porto-Novo. In Lagos the descendants are known as Àgùdà.",
    "region_text": "Èkó, Nigeria",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "documented"
   },
@@ -237,7 +237,7 @@ export const seed = {
    "summary": "The name was used for the Ọ̀yọ́ people by outsiders, and became a shared identity through 19th-century missionary and linguistic work, notably Samuel Ajayi Crowther’s.",
    "body": "The name was used for the Ọ̀yọ́ people by outsiders, and became a shared identity through 19th-century missionary and linguistic work, notably Samuel Ajayi Crowther’s.",
    "region_text": "Abínibí communities worldwide",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "scholarly_interpretation"
   },
@@ -249,7 +249,7 @@ export const seed = {
    "summary": "Oyotunji African Village is founded in South Carolina.",
    "body": "Oyotunji African Village is founded in South Carolina.",
    "region_text": "Oyotunji Village, United States",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "documented"
   },
@@ -261,7 +261,7 @@ export const seed = {
    "summary": "Ọ̀ṣun-Òṣogbo Sacred Grove becomes a UNESCO World Heritage Site.",
    "body": "Ọ̀ṣun-Òṣogbo Sacred Grove becomes a UNESCO World Heritage Site.",
    "region_text": "Òṣogbo, Nigeria",
-   "author_credit": "Ilẹ̀ Abínibí Atlas prototype",
+   "author_credit": "Ilẹ̀ Abínibí",
    "sources": "First Ilẹ̀ Abínibí Atlas prototype (pilot dataset). Source citations and community review still to be added.",
    "evidence": "documented"
   }
@@ -277,7 +277,7 @@ export const seed = {
    "evidence": "under_review",
    "period_text": null,
    "language": "Abínibí",
-   "contributor_credit": "Ilẹ̀ Abínibí Atlas prototype"
+   "contributor_credit": "Ilẹ̀ Abínibí"
   },
   {
    "slug": "names-birth-circumstance",
@@ -289,7 +289,7 @@ export const seed = {
    "evidence": "under_review",
    "period_text": null,
    "language": "Abínibí",
-   "contributor_credit": "Ilẹ̀ Abínibí Atlas prototype"
+   "contributor_credit": "Ilẹ̀ Abínibí"
   },
   {
    "slug": "family-names-oriki",
@@ -301,7 +301,7 @@ export const seed = {
    "evidence": "under_review",
    "period_text": null,
    "language": "Abínibí",
-   "contributor_credit": "Ilẹ̀ Abínibí Atlas prototype"
+   "contributor_credit": "Ilẹ̀ Abínibí"
   },
   {
    "slug": "naming-ceremony",
@@ -313,7 +313,7 @@ export const seed = {
    "evidence": "under_review",
    "period_text": null,
    "language": null,
-   "contributor_credit": "Ilẹ̀ Abínibí Atlas prototype"
+   "contributor_credit": "Ilẹ̀ Abínibí"
   },
   {
    "slug": "ifa-divination",
@@ -325,7 +325,7 @@ export const seed = {
    "evidence": "documented",
    "period_text": "Inscribed 2008",
    "language": null,
-   "contributor_credit": "Ilẹ̀ Abínibí Atlas prototype"
+   "contributor_credit": "Ilẹ̀ Abínibí"
   },
   {
    "slug": "egungun",
@@ -337,7 +337,7 @@ export const seed = {
    "evidence": "under_review",
    "period_text": null,
    "language": null,
-   "contributor_credit": "Ilẹ̀ Abínibí Atlas prototype"
+   "contributor_credit": "Ilẹ̀ Abínibí"
   },
   {
    "slug": "gelede",
@@ -349,7 +349,7 @@ export const seed = {
    "evidence": "documented",
    "period_text": "Recognised 2008",
    "language": null,
-   "contributor_credit": "Ilẹ̀ Abínibí Atlas prototype"
+   "contributor_credit": "Ilẹ̀ Abínibí"
   },
   {
    "slug": "dundun",
@@ -361,7 +361,7 @@ export const seed = {
    "evidence": "under_review",
    "period_text": null,
    "language": null,
-   "contributor_credit": "Ilẹ̀ Abínibí Atlas prototype"
+   "contributor_credit": "Ilẹ̀ Abínibí"
   },
   {
    "slug": "adire",
@@ -373,7 +373,7 @@ export const seed = {
    "evidence": "under_review",
    "period_text": null,
    "language": null,
-   "contributor_credit": "Ilẹ̀ Abínibí Atlas prototype"
+   "contributor_credit": "Ilẹ̀ Abínibí"
   },
   {
    "slug": "aso-oke",
@@ -385,7 +385,7 @@ export const seed = {
    "evidence": "under_review",
    "period_text": null,
    "language": null,
-   "contributor_credit": "Ilẹ̀ Abínibí Atlas prototype"
+   "contributor_credit": "Ilẹ̀ Abínibí"
   },
   {
    "slug": "ife-heads-record",
@@ -397,7 +397,7 @@ export const seed = {
    "evidence": "documented",
    "period_text": "12th to 15th centuries",
    "language": null,
-   "contributor_credit": "Ilẹ̀ Abínibí Atlas prototype"
+   "contributor_credit": "Ilẹ̀ Abínibí"
   },
   {
    "slug": "proverb-omo-ti-a-ko-ko",
@@ -409,7 +409,7 @@ export const seed = {
    "evidence": "under_review",
    "period_text": null,
    "language": "Abínibí",
-   "contributor_credit": "Ilẹ̀ Abínibí Atlas prototype"
+   "contributor_credit": "Ilẹ̀ Abínibí"
   },
   {
    "slug": "timeline-origins-to-2005",
@@ -421,7 +421,7 @@ export const seed = {
    "evidence": "under_review",
    "period_text": "Origins to 2005",
    "language": null,
-   "contributor_credit": "Ilẹ̀ Abínibí Atlas prototype"
+   "contributor_credit": "Ilẹ̀ Abínibí"
   }
  ],
  "landmarks": [

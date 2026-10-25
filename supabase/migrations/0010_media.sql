@@ -1,6 +1,6 @@
 -- 0010: Media. Members share music and playlists from active streaming platforms TO COMMUNITIES.
 -- Only links from the supported platforms are accepted (checked here, in the database, not just in the browser).
-create table media_shares (
+create table if not exists media_shares (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   community_id uuid not null references communities(id) on delete cascade,
@@ -18,11 +18,11 @@ create table media_shares (
   status text not null default 'published' check (status in ('published','hidden')),
   created_at timestamptz not null default now()
 );
-create index on media_shares (community_id, created_at desc);
-create index on media_shares (status, created_at desc);
-create index on media_shares (user_id, created_at desc);
+create index if not exists media_shares_community_idx on media_shares (community_id, created_at desc);
+create index if not exists media_shares_status_idx on media_shares (status, created_at desc);
+create index if not exists media_shares_user_idx on media_shares (user_id, created_at desc);
 
-create function media_before_insert() returns trigger language plpgsql security definer set search_path = public as $$
+create or replace function media_before_insert() returns trigger language plpgsql security definer set search_path = public as $$
 begin
   new.url := trim(new.url);
   if new.url !~* '^https://' then raise exception 'Use a secure (https) link'; end if;
@@ -49,10 +49,11 @@ begin
   new.status := 'published';
   return new;
 end $$;
+drop trigger if exists trg_media_before_insert on media_shares;
 create trigger trg_media_before_insert before insert on media_shares for each row execute function media_before_insert();
 
 -- an invitation also appears in that community's chat room
-create function media_after_insert() returns trigger language plpgsql security definer set search_path = public as $$
+create or replace function media_after_insert() returns trigger language plpgsql security definer set search_path = public as $$
 begin
   if new.invite then
     begin
@@ -62,14 +63,26 @@ begin
   end if;
   return null;
 end $$;
+drop trigger if exists trg_media_after_insert on media_shares;
 create trigger trg_media_after_insert after insert on media_shares for each row execute function media_after_insert();
 
-create function media_lock_fields() returns trigger language plpgsql as $$
+create or replace function media_lock_fields() returns trigger language plpgsql as $$
 begin new.user_id := old.user_id; new.community_id := old.community_id; new.url := old.url; new.platform := old.platform; new.created_at := old.created_at; return new; end $$;
+drop trigger if exists trg_media_lock on media_shares;
 create trigger trg_media_lock before update on media_shares for each row execute function media_lock_fields();
 
 alter table media_shares enable row level security;
+drop policy if exists "anyone reads shared music" on media_shares;
 create policy "anyone reads shared music" on media_shares for select to anon, authenticated using (status = 'published' or is_editor());
+drop policy if exists "members share music" on media_shares;
 create policy "members share music" on media_shares for insert to authenticated with check (user_id = auth.uid() and not is_banned());
+drop policy if exists "editors moderate music" on media_shares;
 create policy "editors moderate music" on media_shares for update to authenticated using (is_editor()) with check (is_editor());
+drop policy if exists "delete own or editor" on media_shares;
 create policy "delete own or editor" on media_shares for delete to authenticated using (user_id = auth.uid() or is_editor());
+
+-- the web API (PostgREST) must be told about the new table, otherwise it answers
+-- "Could not find the table 'public.media_shares' in the schema cache"
+grant select on media_shares to anon, authenticated;
+grant insert, update, delete on media_shares to authenticated;
+notify pgrst, 'reload schema';

@@ -30,7 +30,16 @@ export async function loadCredits(type, ids) {
     rows = data.map(r => ({ ...r, c: r.contributors }));
   }
   rows.filter(r => r.c).sort((a, b) => a.position - b.position).forEach(r => out.set(r.content_id, [...(out.get(r.content_id) || []), { role: r.role, position: r.position, id: r.c.id, slug: r.c.slug, name: r.c.display_name, avatar: r.c.avatar_path }]));
+  // Ilẹ̀ Abínibí is the author of everything; anyone else who was credited as author becomes a contributor.
+  for (const id of ids) out.set(id, withHouseAuthor(out.get(id) || []));
   return out;
+}
+export const HOUSE_AUTHOR = { role: 'author', position: 0, id: 'house', slug: '', name: config.authorName, avatar: null, url: config.authorUrl };
+const sameName = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+export function withHouseAuthor(list = []) {
+  const others = list.filter(c => !sameName(c.name, HOUSE_AUTHOR.name) && !/^ilẹ̀ abínibí (atlas prototype|editorial)$/i.test(c.name || ''))
+    .map(c => (c.role === 'author' ? { ...c, role: 'contributor' } : c));
+  return [HOUSE_AUTHOR, ...others.map((c, i) => ({ ...c, position: i + 1 }))];
 }
 
 export async function loadPost(type, slug) {

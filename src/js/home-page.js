@@ -91,6 +91,12 @@ function festivalCard() {
     wireQuiz(quiz);
     const latest = [...articles].sort((a, b) => String(b.published_at).localeCompare(String(a.published_at))).slice(0, 3), cr = await loadCredits('article', latest.map(a => a.id));
     $('latest').innerHTML = latest.length ? latest.map(a => postCard(a, { credits: cr.get(a.id) || [] })).join('') : '<div class="empty" style="grid-column:1/-1"><h3>No posts yet</h3><p>Be the first to contribute.</p><a class="btn" href="/contribute/">Contribute</a></div>';
+    // "Read more": the latest posts that come from ileabinibi.com, opened inside the Atlas (atlas.ileabinibi.com)
+    const imported = [...articles].filter(a => a.external_url).sort((a, b) => String(b.published_at).localeCompare(String(a.published_at))).slice(0, 3);
+    if (imported.length) {
+      $('readmore').innerHTML = imported.map((a, i) => `<a class="rm ${i === 0 ? 'feature ' : ''}reveal" href="/post/?s=${encodeURIComponent(a.slug)}"><div><span class="tag">${esc(TOPIC_LABEL[a.topic] || 'Article')}</span><h3>${esc(a.title)}</h3></div><span class="go">Read the article</span></a>`).join('');
+      $('more-band').hidden = false;
+    }
     const iso = `${todayG.year}-${String(todayG.month + 1).padStart(2, '0')}-${String(todayG.day).padStart(2, '0')}`;
     const up = events.filter(e => !e.date_start || (e.date_end || e.date_start) >= iso).sort((a, b) => String(a.date_start || '9').localeCompare(String(b.date_start || '9'))).slice(0, 3);
     $('upcoming').innerHTML = up.length ? up.map(e => `<a class="ev reveal" href="/post/?t=event&s=${encodeURIComponent(e.slug)}" style="text-decoration:none;color:inherit"><div class="date">${e.date_start ? `<b>${new Date(e.date_start + 'T00:00:00').getDate()}</b><span>${M3[new Date(e.date_start + 'T00:00:00').getMonth()]}</span>` : '<span>TBC</span>'}</div><div><h3 style="font-size:var(--step-0)">${esc(e.name)}</h3><p class="muted small" style="margin:0">${[e.location_text, e.region_text].filter(Boolean).map(esc).join(' · ')}</p>${e.date_start ? `<p class="small" style="margin:.2rem 0 0"><b>Kọ́jọ́dá:</b> ${esc(K.fromGregorian(e.date_start).month)}, day ${K.fromGregorian(e.date_start).dayOfMonth}</p>` : ''}</div></a>`).join('') : '<div class="empty"><h3>No upcoming events</h3><a class="btn" href="/contribute/?type=event">Share an event</a></div>';

@@ -6,7 +6,7 @@ import { TOPIC_LABEL } from './api.js';
 export function creditsHtml(credits = [], { avatars = true } = {}) {
   if (!credits.length) return '';
   const [first, ...rest] = credits;
-  const a = c => `<a href="/contributor/?c=${encodeURIComponent(c.slug)}">${esc(c.name)}</a>`;
+  const a = c => (c.url ? `<a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.name)}</a>` : `<a href="/contributor/?c=${encodeURIComponent(c.slug)}">${esc(c.name)}</a>`);
   return `<div class="credits">${avatars ? avatarHtml(first.name, first.avatar, 'av') : ''}<span>By ${a(first)}</span>${rest.length ? `<span class="sep">·</span><span class="role">${rest.some(r => r.role === 'editor') ? 'Edited by' : 'With'}</span> ${rest.map(a).join(', ')}` : ''}</div>`;
 }
 const plain = s => String(s || '').replace(/\s+/g, ' ').trim();

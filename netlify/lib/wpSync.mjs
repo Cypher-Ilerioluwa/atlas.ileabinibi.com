@@ -1,18 +1,27 @@
 // Imports posts from the WordPress site (ileabinibi.com) into the Atlas, using tags the editors add on WordPress.
 //   atlas                        import this post (required)
 //   atlas:type:<kind>            article (default) | event | heritage | landmark | person | institution | organisation
-//   atlas:topic:<topic>          history | people | language | culture | food | spirituality | names | popular_event
+//   <Topic>                      the simple way: add ONE ordinary tag named History, People, Language, Culture, Food,
+//                                Spirituality, Names or Popular events (together with the "atlas" tag)
+//   atlas:topic:<topic>          same thing in the long form (wins over the simple tag if both are present)
 //   atlas:community:<slug>       the community this belongs to, e.g. atlas:community:ile-ife
-//   atlas:editor:<Name>          one tag per co-editor; the WordPress author is the lead author
+//   atlas:editor:<Name>          one tag per co-editor. The author of every imported post is always Ilẹ̀ Abínibí
 //   atlas:date:YYYY-MM-DD        event start date (optional: atlas:enddate:YYYY-MM-DD)
 //   atlas:category:<category>    heritage record category (or the category for an organisation)
 
 const WP = (process.env.WP_BASE_URL || 'https://ileabinibi.com').replace(/\/$/, '');
-const UA = 'IleAbinibiAtlasSync/1.0 (+https://atlas.ileabinibi.com)';
+const SITE = (process.env.SITE_URL || 'https://atlas.ileabinibi.com').replace(/\/$/, '');
+const UA = `IleAbinibiAtlasSync/1.0 (+${SITE})`;
+export const HOUSE_AUTHOR = 'Ilẹ̀ Abínibí';
 const TOPICS = ['history', 'people', 'language', 'culture', 'food', 'spirituality', 'names', 'popular_event'];
 const RECORD_CATEGORIES = ['oral_history', 'document', 'photograph', 'audio', 'video', 'biography', 'proverb', 'folktale', 'craft', 'practice', 'timeline', 'research_note', 'terminology', 'community_record', 'article'];
 const KINDS = { article: 'articles', event: 'events', heritage: 'heritage_records', heritage_record: 'heritage_records', landmark: 'landmarks', person: 'people', people: 'people', institution: 'institutions', organisation: 'organisations' };
 const CONTENT_TYPE = { articles: 'article', events: 'event', heritage_records: 'heritage_record', landmarks: 'landmark', people: 'person', institutions: 'institution', organisations: 'organisation' };
+
+// The plain WordPress tags (or categories) that choose a topic: History, People, Language, Culture, Food, Spirituality, Names, Popular events.
+const TOPIC_TAGS = { history: 'history', people: 'people', language: 'language', culture: 'culture', food: 'food', spirituality: 'spirituality', names: 'names',
+  popular_events: 'popular_event', popular_event: 'popular_event', 'popular events': 'popular_event', 'popular-events': 'popular_event' };
+const topicOfTag = s => TOPIC_TAGS[String(s || '').trim().toLowerCase()] || TOPIC_TAGS[String(s || '').trim().toLowerCase().replace(/[\s-]+/g, '_')] || null;
 
 const NAMED = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', hellip: '…', ndash: '–', mdash: '—', rsquo: '’', lsquo: '‘', rdquo: '”', ldquo: '“' };
 export const decode = s => String(s || '').replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(+n)).replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16))).replace(/&([a-z]+);/gi, (m, n) => NAMED[n.toLowerCase()] ?? m);
@@ -30,7 +39,7 @@ export function sanitizeHtml(html, rewrite = h => h) {
   out = cleaned.replace(/<(\/?)([a-z][a-z0-9]*)([^>]*)>/gi, (m, close, rawTag, attrs) => {
     const tag = ALIAS[rawTag.toLowerCase()] || rawTag.toLowerCase(); if (!KEEP.has(tag)) return '';
     if (close) { if (tag === 'a') return open.pop() === 'a' ? '</a>' : ''; return tag === 'br' || tag === 'hr' || tag === 'img' ? '' : `</${tag}>`; }
-    if (tag === 'a') { let href = attr(attrs, 'href').trim(); if (!/^(https?:|mailto:|\/|#)/i.test(href)) href = ''; href = href ? rewrite(href) : null; if (!href) { open.push('x'); return ''; } open.push('a'); return `<a href="${esc(href)}"${/^https?:/i.test(href) ? ' target="_blank" rel="noopener noreferrer"' : ''}>`; }
+    if (tag === 'a') { let href = attr(attrs, 'href').trim(); if (!/^(https?:|mailto:|\/|#)/i.test(href)) href = ''; href = href ? rewrite(href) : null; if (!href) { open.push('x'); return ''; } open.push('a'); return `<a href="${esc(href)}"${/^https?:/i.test(href) && !href.startsWith(SITE + '/') ? ' target="_blank" rel="noopener noreferrer"' : ''}>`; }
     if (tag === 'img') { const src = attr(attrs, 'src').trim(); if (!/^https:\/\//i.test(src)) return ''; return `<img src="${esc(src)}" alt="${esc(attr(attrs, 'alt'))}" loading="lazy">`; }
     return tag === 'br' || tag === 'hr' ? `<${tag}>` : `<${tag}>`;
   });
@@ -45,8 +54,7 @@ const COMMUNITY_HINTS = [[/lagos|eko/, 'eko'], [/ijebu/, 'ijebu-ode'], [/(^|-)oy
 export function inferTopic(slugs) { const text = slugs.join(' '); for (const [topic, re] of TOPIC_HINTS) if (re.test(text)) return topic; return 'culture'; }
 export function inferCommunity(slugs) { for (const sl of slugs) for (const [re, c] of COMMUNITY_HINTS) if (re.test(sl)) return c; return null; }
 
-// Raw WordPress user names such as "admin" are replaced by an editorial credit. WP_AUTHOR_NAME sets what that credit says.
-function authorName(name) { const fallback = process.env.WP_AUTHOR_NAME || 'Ilẹ̀ Abínibí Editorial'; return !name || /^(admin|administrator|editor|ileabinibi|wp)$/i.test(name) ? fallback : name; }
+// Every imported post is credited to Ilẹ̀ Abínibí, whoever wrote it in WordPress (the WordPress user is kept as wpAuthor, not shown).
 
 /** Turns one WordPress REST post (fetched with _embed) into a plain object, or null if it is not tagged for the Atlas. */
 export function parsePost(post) {
@@ -56,17 +64,20 @@ export function parsePost(post) {
   if (!terms.some(t => t.toLowerCase() === 'atlas')) return null;
   const pick = prefix => { const t = terms.find(x => x.toLowerCase().startsWith(prefix)); return t ? t.slice(prefix.length).trim() : null; };
   const kind = (pick('atlas:type:') || 'article').toLowerCase(), table = KINDS[kind] || 'articles';
-  const topic = (pick('atlas:topic:') || '').toLowerCase().replace(/[\s-]/g, '_');
+  // topic: atlas:topic:<x> first, then a plain History / People / ... tag or category, then a guess from the other tags
+  const longTopic = (pick('atlas:topic:') || '').toLowerCase().replace(/[\s-]/g, '_');
+  const plainTopics = all.filter(t => (t.taxonomy === 'post_tag' || t.taxonomy === 'category') && !decode(t.name).toLowerCase().startsWith('atlas')).flatMap(t => [topicOfTag(decode(t.name)), topicOfTag(t.slug)]).filter(Boolean);
+  const topic = TOPICS.includes(longTopic) ? longTopic : (TOPICS.find(t => plainTopics.includes(t)) || '');
   const category = (pick('atlas:category:') || '').toLowerCase().replace(/[\s-]/g, '_');
   const body = htmlToText(post.content?.rendered), summary = htmlToText(post.excerpt?.rendered) || body.slice(0, 240);
   const day = v => (/^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v : null);
   return {
     contentHtml: post.content?.rendered || '', id: post.id, table, title: htmlToText(post.title?.rendered) || 'Untitled', summary: summary.length > 400 ? summary.slice(0, 397).replace(/\s\S*$/, '') + '…' : summary, body,
     link: post.link, publishedAt: post.date_gmt ? post.date_gmt + 'Z' : new Date().toISOString(),
-    topic: TOPICS.includes(topic) ? topic : inferTopic(plainSlugs), recordCategory: RECORD_CATEGORIES.includes(category) ? category : 'article', category: pick('atlas:category:'),
+    topic: topic || inferTopic(plainSlugs), recordCategory: RECORD_CATEGORIES.includes(category) ? category : 'article', category: pick('atlas:category:'),
     communitySlug: (pick('atlas:community:') || '').toLowerCase() || inferCommunity(plainSlugs), dateStart: day(pick('atlas:date:')), dateEnd: day(pick('atlas:enddate:')),
     editors: terms.filter(t => t.toLowerCase().startsWith('atlas:editor:')).map(t => t.slice('atlas:editor:'.length).trim()).filter(Boolean),
-    author: authorName(decode(post._embedded?.author?.[0]?.name || '').trim()), modified: post.modified_gmt ? post.modified_gmt + 'Z' : null, cover: post._embedded?.['wp:featuredmedia']?.[0]?.source_url || null
+    author: HOUSE_AUTHOR, wpAuthor: decode(post._embedded?.author?.[0]?.name || '').trim(), modified: post.modified_gmt ? post.modified_gmt + 'Z' : null, cover: post._embedded?.['wp:featuredmedia']?.[0]?.source_url || null
   };
 }
 
@@ -101,7 +112,7 @@ export async function runSync({ url, key, db: injected }) {
   const norm = u => String(u || '').replace(/^https?:\/\/(www\.)?/i, '').replace(/[?#].*$/, '').replace(/\/$/, '').toLowerCase();
   const linkMap = new Map(parsed.map(p => [norm(p.link), p]));
   const siteHost = norm(WP).split('/')[0];
-  const rewrite = href => { if (href.startsWith('/') || href.startsWith('#') || href.startsWith('mailto:')) return href.startsWith('/') ? null : href; const hit = linkMap.get(norm(href)); if (hit) return `/post/?${hit.table === 'articles' ? '' : 't=' + CONTENT_TYPE[hit.table] + '&'}s=wp-${hit.id}`; return norm(href).split('/')[0] === siteHost ? null : href; };   // links to your own site that are not imported are dropped, so readers stay in the app
+  const rewrite = href => { if (href.startsWith('/') || href.startsWith('#') || href.startsWith('mailto:')) return href.startsWith('/') ? null : href; const hit = linkMap.get(norm(href)); if (hit) return `${SITE}/post/?${hit.table === 'articles' ? '' : 't=' + CONTENT_TYPE[hit.table] + '&'}s=wp-${hit.id}`; return norm(href).split('/')[0] === siteHost ? null : href; };   // links to your own site that are not imported are dropped, so readers stay in the app
   const comms = new Map(); const community = async slug => { if (!slug) return null; if (!comms.has(slug)) comms.set(slug, (await db.from('communities').select('id, preferred_name').eq('slug', slug).maybeSingle()).data || null); return comms.get(slug); };
   const keep = Object.fromEntries(Object.keys(CONTENT_TYPE).map(t => [t, []]));   // keyed by table name
 

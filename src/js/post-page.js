@@ -6,6 +6,7 @@ import { esc } from './search.js';
 import { setCrumbs, fmtDate, fmtDateTime } from './core.js';
 import { toast } from './shell.js';
 import * as K from './calendar/kojoda.js';
+import { config } from './config.js';
 
 const $ = id => document.getElementById(id), q = new URLSearchParams(location.search);
 const type = TYPES[q.get('t')] ? q.get('t') : 'article', slug = q.get('s');
@@ -48,7 +49,7 @@ const refreshComments = () => { $('comments').outerHTML = comments(); };
     if (ctx.user) user = { id: ctx.user.id, name: ctx.profile?.display_name || ctx.user.email.split('@')[0], avatar: ctx.profile?.avatar_path || null, role: ctx.isAdmin ? 'admin' : ctx.isEditor ? 'editor' : null };
     const comms = (await loadCommunities()).rows, comm = comms.find(c => c.id === item.community_id);
     document.title = `${title} | Ilẹ̀ Abínibí Atlas`;
-    if (item.external_url) { const l = document.createElement('link'); l.rel = 'canonical'; l.href = item.external_url; document.head.querySelector('link[rel=canonical]')?.remove(); document.head.append(l); }   // invisible to readers
+    { const l = document.createElement('link'); l.rel = 'canonical'; l.href = config.siteUrl.replace(/\/$/, '') + location.pathname + location.search; document.head.querySelector('link[rel=canonical]')?.remove(); document.head.append(l); }   // always the atlas.ileabinibi.com address
     setCrumbs([['Home', '/'], comm ? ['Map', '/map/'] : ['Posts', '/posts/'], ...(comm ? [[comm.preferred_name, `/city/?c=${encodeURIComponent(comm.slug)}`]] : []), [title]]);
     const text = item.body || item.summary || '', mins = readingMinutes(text);
     let meta = [];
@@ -66,7 +67,7 @@ const refreshComments = () => { $('comments').outerHTML = comments(); };
       ${item.summary && item.summary !== item.body && !item.body_html ? `<p class="lede">${esc(item.summary)}</p>` : ''}
       <div class="body richbody">${bodyHtml}</div>
       ${item.sources ? `<div class="credit-box"><h2>Sources</h2><p style="margin:0;white-space:pre-line">${esc(item.sources)}</p></div>` : ''}
-      ${credits.length ? `<div class="credit-box"><h2>Contributors</h2>${credits.map((c, i) => `<div class="credit-row">${avatarHtml(c.name, c.avatar, 'av')}<div><a href="/contributor/?c=${encodeURIComponent(c.slug)}">${esc(c.name)}</a><br><span class="role">${i === 0 ? 'Author' : c.role === 'editor' ? 'Editor' : 'Contributor'}</span></div><a class="btn btn-sm btn-ghost" style="margin-left:auto" href="/contributor/?c=${encodeURIComponent(c.slug)}">All work</a></div>`).join('')}</div>` : ''}
+      ${credits.length ? `<div class="credit-box"><h2>Contributors</h2>${credits.map((c, i) => { const href = c.url || `/contributor/?c=${encodeURIComponent(c.slug)}`, ext = c.url ? ' target="_blank" rel="noopener"' : ''; return `<div class="credit-row">${avatarHtml(c.name, c.avatar, 'av')}<div><a href="${esc(href)}"${ext}>${esc(c.name)}</a><br><span class="role">${i === 0 ? 'Author' : c.role === 'editor' ? 'Editor' : 'Contributor'}</span></div><a class="btn btn-sm btn-ghost" style="margin-left:auto" href="${esc(href)}"${ext}>${c.url ? 'Visit website' : 'All work'}</a></div>`; }).join('')}</div>` : ''}
       ${bar()}
       ${comments()}
       <p style="display:flex;gap:.6rem;flex-wrap:wrap">${type === 'article' || type === 'event' ? '<a class="btn btn-ghost btn-sm" href="/contribute/?type=edit">Suggest a correction</a>' : ''}${comm ? `<a class="btn btn-ghost btn-sm" href="/city/?c=${encodeURIComponent(comm.slug)}">More from ${esc(comm.preferred_name)}</a>` : ''}</p>`;
