@@ -31,6 +31,13 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
+# The old Netlify address always sends visitors to the real domain (keeps the path and the ?query).
+[[redirects]]
+  from = "https://atlas-ileabinibi.netlify.app/*"
+  to = "https://atlas.ileabinibi.com/:splat"
+  status = 301
+  force = true
+
 [[redirects]]
   from = "/calendar/*"
   to = "/kojoda/"
