@@ -27,7 +27,7 @@ export function buildNotification({ type, table, record, old_record }, names = {
   }
   if (table === 'media_shares') {
     if (type !== 'INSERT' || r.status !== 'published') return null;
-    const where = names.communities?.[r.community_id];
+    const where = r.community_id ? names.communities?.[r.community_id] : 'General';
     return { kind: 'content', authorId: r.user_id || null, title: r.invite ? 'New listening invitation' : 'New music shared', body: clip([r.title, r.artist].filter(Boolean).join(' · ') + (where ? ` (${where})` : ''), 140), url: `/media/?m=${encodeURIComponent(r.id)}`, tag: topic('media-' + r.id) };
   }
   const c = CONTENT[table];

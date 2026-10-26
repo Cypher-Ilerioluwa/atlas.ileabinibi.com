@@ -62,7 +62,7 @@ Use **Supabase > SQL Editor > New query** for every file. For each file: in GitH
 6. `0007_publish_content.sql` (publishes the pilot content from your prototype)
 7. `0008_community_features.sql` (contributors and credits, imports from ileabinibi.com, chat replies, reactions and read receipts)
 8. `0009_social_chat.sql` (chat photos, edit and pin, likes and comments, formatted imported posts, live notification badges)
-9. `0010_media.sql` (shared music and playlists). Safe to run again. **If the Media page says "Could not find the table 'public.media_shares' in the schema cache", this file has not been run yet: run it now.** It ends by refreshing Supabase's API cache, so no restart is needed
+9. `0010_media.sql` (shared music and playlists, including sharing to the **General** community). Safe to run again, **and you must run it again if you ran an older copy**: it now lets a song be shared with General. **If the Media page says "Could not find the table 'public.media_shares' in the schema cache", this file has not been run yet: run it now.** It ends by refreshing Supabase's API cache, so no restart is needed
 10. `0011_house_author.sql` (makes **Ilẹ̀ Abínibí** the author of all content, linking to https://ileabinibi.com/). Safe to run again
 11. `0012_push_new_content.sql` (push notification to everyone for every new chat message, shared song and new article, event or record). **Do Part V first**, because this file needs the secret from it. Safe to run again
 12. `0006_selfcheck.sql` last: it changes nothing and shows OK or MISSING for each part
