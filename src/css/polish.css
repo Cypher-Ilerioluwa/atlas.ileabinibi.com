@@ -572,7 +572,7 @@ body.kb-open .stage-dock.is-pip,body.chat-open .stage-dock.is-pip{display:none}
 @media (max-width:900px){
   .cx2[data-view=list] .rl-list{overflow:visible;overscroll-behavior:auto;flex:none;padding-bottom:calc(1rem + env(safe-area-inset-bottom,0px))}
   .cx2 .rl{min-height:0}
-  .cx2[data-view=list] .rl-head{position:sticky;top:calc(3.6rem + env(safe-area-inset-top,0px));z-index:6;background:var(--bg);padding-top:.7rem;border-bottom:1px solid var(--line)}
+  .cx2[data-view=list] .rl-head{position:static;padding:.7rem 1rem .6rem}
   .rl-item{padding:.7rem .6rem;min-height:64px;-webkit-tap-highlight-color:transparent}
   .rl,.rl-list,.rl-item{touch-action:pan-y}
 }
