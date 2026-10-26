@@ -13,9 +13,9 @@ export async function loadMedia() {
 }
 export async function shareMedia(user, f) {
   const p = parseMediaUrl(f.url); if (!p.ok) throw new Error(p.reason);
-  if (!f.community_id) throw new Error('Choose a community to share with.');
+  if (!f.community_id) throw new Error('Choose a community to share with.');   // 'general' = everyone
   if (!f.title || !f.title.trim()) throw new Error('Give it a title.');
-  const row = { community_id: f.community_id, url: p.url, platform: p.platform, kind: p.kind, title: f.title.trim().slice(0, 120), artist: (f.artist || '').trim().slice(0, 120) || null, note: (f.note || '').trim().slice(0, 280) || null, cover_url: f.cover_url || null, invite: Boolean(f.invite), listen_at: f.listen_at || null, shared_from: f.shared_from || null };
+  const row = { community_id: f.community_id === 'general' ? null : f.community_id, url: p.url, platform: p.platform, kind: p.kind, title: f.title.trim().slice(0, 120), artist: (f.artist || '').trim().slice(0, 120) || null, note: (f.note || '').trim().slice(0, 280) || null, cover_url: f.cover_url || null, invite: Boolean(f.invite), listen_at: f.listen_at || null, shared_from: f.shared_from || null };
   if (!isConfigured()) { const m = { ...row, id: newId(), user_id: user.id, author_name: user.name, author_avatar: null, author_role: null, status: 'published', created_at: new Date().toISOString() }; demoStore().media_shares.push(m); demoSave(); return m; }
   const c = await getClient();
   return must(await c.from('media_shares').insert({ ...row, user_id: user.id }).select().single());

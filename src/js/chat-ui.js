@@ -4,6 +4,7 @@ import { esc } from './search.js';
 import { avatarHtml } from './content.js';
 import { toast } from './shell.js';
 import { config } from './config.js';
+import { communityBadge } from './community-badge.js';
 
 const QUICK = ['❤️', '👍', '😂', '🙏', '🔥', '👏', '😮', '😢'];
 const PICK = ['😀', '😂', '😍', '🙏', '👍', '👏', '🔥', '❤️', '🎉', '😮', '😢', '🤝', '🌍', '☀️', '🥁', '🍲', '💬', '✨', '🙌', '😊', '🤔', '💯', '👋', '🌟'];
@@ -47,7 +48,7 @@ export async function mountChat(el, { ctx, rooms, initialRoom, directOpen }) {
     const q = ($('rl-q').value || '').toLowerCase(), list = rooms.filter(r => r.name.toLowerCase().includes(q));
     const general = list.filter(r => r.id === 'general'), rest = list.filter(r => r.id !== 'general').sort((a, b) => (last.get(b.id)?.created_at || '').localeCompare(last.get(a.id)?.created_at || '') || a.name.localeCompare(b.name));
     $('rl-list').innerHTML = [...general, ...rest].map(r => { const l = last.get(r.id), n = unread.get(r.id) || 0;
-      return `<li><button type="button" class="rl-item ${r.id === room ? 'on' : ''}" data-room="${esc(r.id)}"><span class="rl-av">${r.id === 'general' ? '🌍' : esc(initials(r.name))}</span><span class="rl-main"><b>${esc(r.name)}</b><small>${l ? `${l.image_path && !l.body ? '📷 Photo' : esc((l.user_id === user?.id ? 'You' : l.author_name) + ': ' + (l.body || '').slice(0, 60))}` : 'No messages yet'}</small></span><span class="rl-meta">${l ? `<time>${short(l.created_at)}</time>` : ''}${n ? `<i class="ub">${n > 99 ? '99+' : n}</i>` : ''}</span></button></li>`; }).join('') || '<li class="muted" style="padding:1rem">No rooms match.</li>';
+      return `<li><button type="button" class="rl-item ${r.id === room ? 'on' : ''}" data-room="${esc(r.id)}"><span class="rl-av">${communityBadge(r, 48)}</span><span class="rl-main"><b>${esc(r.name)}</b><small>${l ? `${l.image_path && !l.body ? '📷 Photo' : esc((l.user_id === user?.id ? 'You' : l.author_name) + ': ' + (l.body || '').slice(0, 60))}` : 'No messages yet'}</small></span><span class="rl-meta">${l ? `<time>${short(l.created_at)}</time>` : ''}${n ? `<i class="ub">${n > 99 ? '99+' : n}</i>` : ''}</span></button></li>`; }).join('') || '<li class="muted" style="padding:1rem">No rooms match.</li>';
   }
   async function loadLobby() {
     lobby = await createLobby({ user, onEvent: ev => {
@@ -85,7 +86,7 @@ export async function mountChat(el, { ctx, rooms, initialRoom, directOpen }) {
     const pin = [...msgs].reverse().find(m => m.pinned); $('cx-pin').hidden = !pin; if (pin) { $('cx-pin').dataset.id = pin.id; $('cx-pin').innerHTML = `<span>📌 Pinned</span><b>${esc(pin.author_name)}:</b> ${esc((pin.body || '📷 Photo').slice(0, 80))}`; }
   }
   function header() {
-    $('cx-name').textContent = roomName(); $('cx-ava').innerHTML = room === 'general' ? '🌍' : esc(initials(roomName()));
+    $('cx-name').textContent = roomName(); $('cx-ava').innerHTML = communityBadge(roomOf(room), 44);
     $('cx-online').textContent = online.length ? `${online.length} online` : (be?.live ? 'No one else online' : 'Preview room');
     $('cx-stack').innerHTML = online.slice(0, 4).map(u => avatarHtml(u.name, u.avatar, 'av')).join('') + (online.length > 4 ? `<span class="av more">+${online.length - 4}</span>` : '');
     $('cx-people').innerHTML = `<b>Online now</b>${online.map(u => `<div class="cx-person">${avatarHtml(u.name, u.avatar, 'av')}<span>${esc(u.name)}${user && u.id === user.id ? ' (you)' : ''}</span>${badge(u.role)}</div>`).join('') || '<p class="muted small">Nobody yet.</p>'}`;
@@ -123,6 +124,9 @@ export async function mountChat(el, { ctx, rooms, initialRoom, directOpen }) {
   function showChat(r) { root.dataset.view = 'chat'; if (mobile()) { document.body.classList.add('chat-open'); history.pushState({ chat: r }, ''); } open(r); }
   function showList() { root.dataset.view = 'list'; document.body.classList.remove('chat-open'); closeMenu(); }
   addEventListener('popstate', () => { if (root.dataset.view === 'chat' && mobile()) showList(); });
+  // never leave the page locked: if the list is showing (or the page comes back from the cache), the chat's scroll lock must be off
+  const unlock = () => { if (root.dataset.view !== 'chat' || !mobile()) document.body.classList.remove('chat-open'); };
+  addEventListener('pageshow', unlock); addEventListener('resize', unlock); document.addEventListener('visibilitychange', unlock); unlock();
   $('cx-back').addEventListener('click', () => { if (history.state?.chat) history.back(); else showList(); });
   $('rl-list').addEventListener('click', e => { const b = e.target.closest('[data-room]'); if (b) showChat(b.dataset.room); });
   $('rl-q').addEventListener('input', drawRooms);

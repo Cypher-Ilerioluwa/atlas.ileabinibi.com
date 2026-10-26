@@ -3,7 +3,7 @@
 create table if not exists media_shares (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  community_id uuid not null references communities(id) on delete cascade,
+  community_id uuid references communities(id) on delete cascade,   -- empty = the General community (everyone)
   platform text not null default 'spotify' check (platform in ('spotify','apple_music','youtube','youtube_music','soundcloud','audiomack','deezer','tidal','boomplay')),
   kind text not null default 'track' check (kind in ('track','album','playlist','video','artist','show','episode')),
   url text not null check (char_length(url) between 12 and 500),
@@ -38,7 +38,7 @@ begin
     when new.url ~* '^https://((www|m)\.)?boomplay\.com/' then 'boomplay'
     else null end;
   if new.platform is null then raise exception 'Only links from Spotify, Apple Music, YouTube, YouTube Music, SoundCloud, Audiomack, Deezer, Tidal and Boomplay are accepted'; end if;
-  if not exists (select 1 from communities where id = new.community_id and status = 'published') then raise exception 'Choose a community to share with'; end if;
+  if new.community_id is not null and not exists (select 1 from communities where id = new.community_id and status = 'published') then raise exception 'Choose a community to share with'; end if;
   if exists (select 1 from media_shares where user_id = new.user_id and created_at > now() - interval '20 seconds') then raise exception 'Slow down a little.'; end if;
   if (select count(*) from media_shares where user_id = new.user_id and created_at > now() - interval '1 day') >= 15 then raise exception 'You have reached today''s sharing limit.'; end if;
   if new.cover_url is not null and new.cover_url !~* '^https://' then new.cover_url := null; end if;
@@ -58,7 +58,8 @@ begin
   if new.invite then
     begin
       insert into chat_messages(room, user_id, body)
-        select c.slug, new.user_id, left('🎧 Listen with me: ' || new.title, 150) || E'\n/media/?m=' || new.id from communities c where c.id = new.community_id;
+        values (coalesce((select c.slug from communities c where c.id = new.community_id), 'general'), new.user_id,
+                left('🎧 Listen with me: ' || new.title, 150) || E'\n/media/?m=' || new.id);
     exception when others then null; end;
   end if;
   return null;
@@ -80,6 +81,9 @@ drop policy if exists "editors moderate music" on media_shares;
 create policy "editors moderate music" on media_shares for update to authenticated using (is_editor()) with check (is_editor());
 drop policy if exists "delete own or editor" on media_shares;
 create policy "delete own or editor" on media_shares for delete to authenticated using (user_id = auth.uid() or is_editor());
+
+-- older installs: let the community be empty (General)
+alter table media_shares alter column community_id drop not null;
 
 -- the web API (PostgREST) must be told about the new table, otherwise it answers
 -- "Could not find the table 'public.media_shares' in the schema cache"

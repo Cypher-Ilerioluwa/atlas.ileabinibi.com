@@ -1,3 +1,4 @@
+import { communityBadge } from './community-badge.js';
 import { getContext, loadCommunities } from './api.js';
 import { loadMedia, shareMedia, deleteMedia, lookupMeta, joinListening } from './media.js';
 import { loadEngagement, toggleLike, avatarHtml } from './content.js';
@@ -8,6 +9,7 @@ import { toast } from './shell.js';
 
 const $ = id => document.getElementById(id);
 const TABS = [['all', 'All'], ['playlist', 'Playlists'], ['track', 'Tracks and albums'], ['video', 'Videos'], ['party', 'Listening parties']];
+const GENERAL = { id: 'general', slug: 'general', preferred_name: 'General' };
 let ctx, user = null, items = [], comms = new Map(), tab = 'all', q = '', current = null, listening = null, ytReady = null;
 const url = new URL(location);
 setCrumbs([['Home', '/'], ['Media']]);
@@ -15,22 +17,23 @@ const fmtWhen = t => new Date(t).toLocaleString('en-GB', { weekday: 'short', day
 const ago = t => { const m = Math.round((Date.now() - new Date(t)) / 6e4); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; };
 
 const visible = () => items.filter(m => {
-  if ($('mc').value && m.community_id !== $('mc').value) return false; if ($('mp').value && m.platform !== $('mp').value) return false;
+  if ($('mc').value && (m.community_id || 'general') !== $('mc').value) return false; if ($('mp').value && m.platform !== $('mp').value) return false;
   if (tab === 'playlist' && m.kind !== 'playlist') return false; if (tab === 'track' && !['track', 'album', 'artist', 'episode', 'show'].includes(m.kind)) return false; if (tab === 'video' && m.kind !== 'video') return false; if (tab === 'party' && !m.invite) return false;
-  return matches([m.title, m.artist, m.note, comms.get(m.community_id)?.preferred_name], q);
+  return matches([m.title, m.artist, m.note, commOf(m).preferred_name], q);
 });
 function tabs() { $('mtabs').innerHTML = TABS.map(([k, t]) => `<button class="chip" role="tab" data-t="${k}" aria-pressed="${k === tab}">${t}${k === 'party' ? ` <span class="muted small">${items.filter(m => m.invite).length}</span>` : ''}</button>`).join(''); }
 function cover(m) { const P = PLATFORMS[m.platform]; return m.cover_url ? `<img class="mcover" src="${esc(m.cover_url)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<div class="mcover ph" style="--pc:${P.color}"><span>${P.glyph}</span></div>`; }
 function card(m) {
-  const P = PLATFORMS[m.platform], can = user && (m.user_id === user.id || ctx.isEditor), c = comms.get(m.community_id);
+  const P = PLATFORMS[m.platform], can = user && (m.user_id === user.id || ctx.isEditor), c = commOf(m);
   return `<article class="mcard reveal ${current?.id === m.id ? 'playing' : ''}" data-id="${esc(m.id)}">${cover(m)}
-    <div class="mbody"><div class="mmeta"><span class="plat" style="--pc:${P.color}">${P.label}</span><span>${kindLabel(m.kind)}</span>${c ? `<a href="/city/?c=${encodeURIComponent(c.slug)}">${esc(c.preferred_name)}</a>` : ''}</div>
+    <div class="mbody"><div class="mmeta"><span class="plat" style="--pc:${P.color}">${P.label}</span><span>${kindLabel(m.kind)}</span><a class="cchip" href="${c.id === 'general' ? '/community/?room=general' : '/city/?c=' + encodeURIComponent(c.slug)}">${communityBadge({ id: c.slug, name: c.preferred_name }, 20)}${esc(c.preferred_name)}</a></div>
       <h3>${esc(m.title)}</h3>${m.artist ? `<p class="mart">${esc(m.artist)}</p>` : ''}
       ${m.invite ? `<div class="invite">🎧 ${m.listen_at ? 'Listening party · ' + esc(fmtWhen(m.listen_at)) : 'Invitation: listen together'}</div>` : ''}
       ${m.note ? `<p class="mnote">${esc(m.note)}</p>` : ''}
       <div class="mby">${avatarHtml(m.author_name, m.author_avatar, 'av')}<span>${esc(m.author_name)}${m.author_role ? ` <span class="role">${esc(m.author_role)}</span>` : ''} · ${ago(m.created_at)}</span></div>
       <div class="mact"><button class="btn btn-sm" data-play="${esc(m.id)}">${current?.id === m.id ? 'Playing' : 'Play'}</button><button class="btn btn-sm btn-ghost" data-share="${esc(m.id)}">Share to a community</button>${can ? `<button class="btn btn-sm btn-ghost" data-del="${esc(m.id)}" aria-label="Remove">Remove</button>` : ''}</div></div></article>`;
 }
+const commOf = m => (m.community_id && comms.get(m.community_id)) || GENERAL;
 function feed() {
   const list = visible();
   $('mfeed').innerHTML = list.length ? `<div class="mgrid">${list.map(card).join('')}</div>` : `<div class="empty"><h3>Nothing here yet</h3><p>Be the first to share something with a community.</p><button class="btn" data-add>Share music</button></div>`;
@@ -55,7 +58,7 @@ function stage(m) {
   const wasHidden = slot.hidden; slot.hidden = false;
   const p = parseMediaUrl(m.url), P = PLATFORMS[m.platform], list = visible(), i = list.findIndex(x => x.id === m.id), nxt = list.slice(i + 1, i + 4);
   const embedOk = p.ok && p.embedUrl && ALLOWED_EMBED.test(p.embedUrl);
-  box.innerHTML = `<div class="stage-card" style="--pc:${P.color}"><div class="stage-top"><span class="plat" style="--pc:${P.color}">${P.label}</span><span class="pip-title">${esc(m.title)}</span><span class="muted small stage-sub">${kindLabel(m.kind)} · ${esc(comms.get(m.community_id)?.preferred_name || '')}</span>
+  box.innerHTML = `<div class="stage-card" style="--pc:${P.color}"><div class="stage-top"><span class="plat" style="--pc:${P.color}">${P.label}</span><span class="pip-title">${esc(m.title)}</span><span class="muted small stage-sub">${kindLabel(m.kind)} · ${esc(commOf(m).preferred_name)}</span>
       <span class="stage-win"><button class="iconbtn" type="button" data-step="-1" aria-label="Previous" ${i <= 0 ? 'disabled' : ''}>⏮</button><button class="iconbtn" type="button" data-step="1" aria-label="Next" ${i < 0 || i >= list.length - 1 ? 'disabled' : ''}>⏭</button><button class="iconbtn" type="button" data-pip-toggle aria-label="Minimise or expand the player" id="pipbtn">▾</button><button class="iconbtn" type="button" data-close-player aria-label="Close the player">✕</button></span></div>
     ${embedOk ? `<iframe id="mframe" class="mframe" data-kind="${esc(m.kind)}" style="height:${p.height}px;--fh:${p.height}px" src="${esc(p.embedUrl)}" title="${esc(m.title)}" allow="autoplay; encrypted-media; clipboard-write; fullscreen; picture-in-picture" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-presentation allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>`
       : `<div class="linkout"><p>${P.label} does not allow playing inside other apps.</p><a class="btn btn-gold" href="${esc(m.url)}" target="_blank" rel="noopener noreferrer">Open in ${P.label}</a></div>`}
@@ -97,7 +100,7 @@ firstVisitHint();
 function step(n) { const list = visible(), i = list.findIndex(m => m.id === current?.id), t = list[i + n]; if (t) play(t.id); }
 
 // ---------- dialogs ----------
-const commOptions = sel => [...comms.values()].map(c => `<option value="${esc(c.id)}" ${c.id === sel ? 'selected' : ''}>${esc(c.preferred_name)}</option>`).join('');
+const commOptions = sel => [GENERAL, ...comms.values()].map(c => `<option value="${esc(c.id)}" ${c.id === sel ? 'selected' : ''}>${esc(c.preferred_name)}</option>`).join('');
 function needSignIn() { toast('Sign in to share music.'); setTimeout(() => { location.href = '/account/?next=/media/'; }, 900); }
 function addDialog() {
   if (!user || ctx.banned) return needSignIn();
@@ -105,7 +108,7 @@ function addDialog() {
   dlg.innerHTML = `<form method="dialog" id="mf"><h2>Share music</h2><p class="muted small">Accepted: ${esc(SUPPORTED_TEXT)}.</p>
     <div class="fgrid"><div class="fld"><label for="mu">Link *</label><input id="mu" type="text" inputmode="url" placeholder="Paste a track, album or playlist link" autocomplete="off"><p class="hint" id="mhint" aria-live="polite"></p></div>
     <div class="fld twothird"><label for="mt">Title *</label><input id="mt" type="text" maxlength="120"></div><div class="fld third"><label for="ma">Artist or curator</label><input id="ma" type="text" maxlength="120"></div>
-    <div class="fld"><label for="mcm">Share with community *</label><select id="mcm"><option value="">Choose a community</option>${commOptions('')}</select></div>
+    <div class="fld"><label for="mcm">Share with community *</label><select id="mcm">${commOptions('general')}</select></div>
     <div class="fld"><label for="mn">Say something (optional)</label><textarea id="mn" rows="2" maxlength="280"></textarea></div>
     <div class="fld"><label class="chk"><input type="checkbox" id="mi"> Invite this community to listen together</label></div><div class="fld" id="mwhen" hidden><label for="mw">When (optional)</label><input id="mw" type="datetime-local"></div></div>
     <p id="merr" role="alert" class="small" style="color:var(--danger)"></p><div class="bar"><button class="btn btn-gold" value="go">Share</button><button class="btn btn-ghost" value="cancel" formnovalidate>Cancel</button></div></form>`;
@@ -130,7 +133,7 @@ function shareDialog(id) {
   if (!user || ctx.banned) return needSignIn();
   const m = items.find(x => x.id === id), dlg = $('dlg');
   dlg.innerHTML = `<form method="dialog"><h2>Share to a community</h2><p class="muted">“${esc(m.title)}” will be added to the community you choose. Sharing stays inside Ilẹ̀ Abínibí Atlas.</p>
-    <div class="fld"><label for="sc">Community *</label><select id="sc"><option value="">Choose a community</option>${commOptions('')}</select></div><div class="fld"><label for="sn">Say something (optional)</label><textarea id="sn" rows="2" maxlength="280"></textarea></div>
+    <div class="fld"><label for="sc">Community *</label><select id="sc">${commOptions('general')}</select></div><div class="fld"><label for="sn">Say something (optional)</label><textarea id="sn" rows="2" maxlength="280"></textarea></div>
     <div class="fld"><label class="chk"><input type="checkbox" id="si"> Invite them to listen together</label></div><p id="serr" role="alert" class="small" style="color:var(--danger)"></p><div class="bar"><button class="btn btn-gold" value="go">Share</button><button class="btn btn-ghost" value="cancel" formnovalidate>Cancel</button></div></form>`;
   dlg.showModal();
   dlg.querySelector('form').addEventListener('submit', async e => {
@@ -161,7 +164,7 @@ $('dlg').addEventListener('click', e => { if (e.target === $('dlg')) $('dlg').cl
   if (ctx.user) user = { id: ctx.user.id, name: ctx.profile?.display_name || ctx.user.email.split('@')[0], avatar: ctx.profile?.avatar_path || null, role: ctx.isAdmin ? 'admin' : ctx.isEditor ? 'editor' : null };
   try {
     (await loadCommunities()).rows.forEach(c => comms.set(c.id, c));
-    $('mc').insertAdjacentHTML('beforeend', [...comms.values()].map(c => `<option value="${esc(c.id)}">${esc(c.preferred_name)}</option>`).join(''));
+    $('mc').insertAdjacentHTML('beforeend', [GENERAL, ...comms.values()].map(c => `<option value="${esc(c.id)}">${esc(c.preferred_name)}</option>`).join(''));
     $('mp').insertAdjacentHTML('beforeend', Object.entries(PLATFORMS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join(''));
     items = await loadMedia(); tabs(); feed();
     const want = url.searchParams.get('m'); if (want && items.some(m => m.id === want)) { play(want); document.querySelector(`[data-id="${CSS.escape(want)}"]`)?.scrollIntoView({ block: 'center' }); }

@@ -558,3 +558,21 @@ body.kb-open .stage-dock.is-pip,body.chat-open .stage-dock.is-pip{display:none}
 @media (min-width:700px){.mfilters{grid-template-columns:1fr 1fr 2fr}}
 @media (max-width:699px){.mfilters .fld:last-child{grid-column:1/-1!important;width:100%!important;max-width:none!important}}
 .media-head{flex-wrap:wrap}.media{overflow-x:clip}
+
+/* ---- community badges (profile pictures) ---- */
+.cbadge{display:inline-grid;place-items:center;flex:none;width:var(--s,46px);height:var(--s,46px);border-radius:50%;overflow:hidden;box-shadow:inset 0 0 0 2px rgba(255,255,255,.4),0 1px 3px rgba(40,20,10,.25);vertical-align:middle}
+.cbadge svg{width:100%;height:100%;display:block}
+.cbadge.general{background:#fbf3e2;box-shadow:inset 0 0 0 2px var(--brand-gold),0 1px 3px rgba(40,20,10,.25)}
+.cbadge.general img{width:86%;height:86%;object-fit:contain;border-radius:50%}
+.rl-av,.cx-ava{background:none!important;overflow:visible;box-shadow:none}
+.cchip{display:inline-flex;align-items:center;gap:.35rem;font-weight:700;min-width:0}
+.cchip .cbadge{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.4)}
+
+/* ---- phones: the room list scrolls with the page (it used to trap the swipe) ---- */
+@media (max-width:900px){
+  .cx2[data-view=list] .rl-list{overflow:visible;overscroll-behavior:auto;flex:none;padding-bottom:calc(1rem + env(safe-area-inset-bottom,0px))}
+  .cx2 .rl{min-height:0}
+  .cx2[data-view=list] .rl-head{position:sticky;top:calc(3.6rem + env(safe-area-inset-top,0px));z-index:6;background:var(--bg);padding-top:.7rem;border-bottom:1px solid var(--line)}
+  .rl-item{padding:.7rem .6rem;min-height:64px;-webkit-tap-highlight-color:transparent}
+  .rl,.rl-list,.rl-item{touch-action:pan-y}
+}
