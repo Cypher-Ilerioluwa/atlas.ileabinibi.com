@@ -45,7 +45,7 @@ function seedBase() {
       { id: uid(), user_id: 'demo-user', kind: 'event', title: 'Sample rejected event', region_text: 'Sample region', payload: {}, consent_given: true, status: 'rejected', editor_feedback: 'Sample feedback: please add the exact venue.', created_at: nowIso() },
       { id: uid(), user_id: 'demo-other', kind: 'edit', title: 'Sample edit request from another member', region_text: 'Sample region', payload: { reason: 'Demo only' }, consent_given: true, status: 'under_review', created_at: nowIso() }],
     notifs: [{ id: uid(), kind: 'system', title: 'Welcome to the demo', body: 'Notifications from administrators and decisions on your submissions appear here.', link: null, read_at: null, created_at: nowIso() }],
-    prefs: { submission_updates: true, event_reminders: true, announcements: false },
+    prefs: { submission_updates: true, event_reminders: true, announcements: false, new_content: true, chat_messages: true },
     profile: { display_name: 'Demo member', bio: '', avatar_path: null },
     users: [{ id: 'admin-1', email: 'cypherilerioluwa@gmail.com', display_name: 'Cypher Ilerioluwa', roles: ['admin'], banned: false, created_at: nowIso(), last_sign_in_at: nowIso(), submissions: 0 },
             { id: 'demo-user', email: 'member@example.org', display_name: 'Demo member', roles: [], banned: false, created_at: nowIso(), last_sign_in_at: null, submissions: 2 },
@@ -168,8 +168,12 @@ function liveApi(c, user, session) {
     markRead: async id => { let q = c.from('notifications').update({ read_at: nowIso() }).is('read_at', null); q = id === 'all' ? q.eq('user_id', user.id) : q.eq('id', id); must(await q); },
     watchNotifications(cb) { const ch = c.channel('notif-' + user.id).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, p => cb(p.new)).subscribe(); return () => c.removeChannel(ch); },
     unread: async () => (await c.from('notifications').select('id', { count: 'exact', head: true }).is('read_at', null)).count || 0,
-    prefs: async () => (await c.from('notification_prefs').select('*').eq('user_id', user.id).maybeSingle()).data || { submission_updates: true, event_reminders: true, announcements: false },
-    savePrefs: async p => must(await c.from('notification_prefs').upsert({ user_id: user.id, ...p, updated_at: nowIso() })),
+    prefs: async () => (await c.from('notification_prefs').select('*').eq('user_id', user.id).maybeSingle()).data || { submission_updates: true, event_reminders: true, announcements: false, new_content: true, chat_messages: true },
+    savePrefs: async p => {
+      const row = { user_id: user.id, ...p, updated_at: nowIso() }; let r = await c.from('notification_prefs').upsert(row);
+      if (r.error && /new_content|chat_messages|schema cache/i.test(r.error.message)) { const { new_content, chat_messages, ...old } = row; r = await c.from('notification_prefs').upsert(old); }   // 0012 not run yet: save the rest
+      return must(r);
+    },
     async pushState() {
       if (!('serviceWorker' in navigator && 'PushManager' in window)) return 'unsupported';
       if (Notification.permission === 'denied') return 'denied';

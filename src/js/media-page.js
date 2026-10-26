@@ -50,23 +50,50 @@ async function autoNext(m, frame) {   // best effort: YouTube single videos and 
   } catch { /* the platform's own player keeps working without auto-next */ }
 }
 function stage(m) {
-  const box = $('mstage'); listening?.leave(); listening = null;
-  if (!m) { box.innerHTML = '<div class="stage-empty"><div class="sunmark" aria-hidden="true"></div><h3>Pick something to play</h3><p class="muted">Press Play on any card. The player stays here while you browse.</p></div>'; return; }
+  const box = $('mdock'), slot = $('mstage'); listening?.leave(); listening = null;
+  if (!m) { box.innerHTML = ''; box.classList.remove('is-pip'); slot.style.minHeight = ''; slot.hidden = true; return; }
+  const wasHidden = slot.hidden; slot.hidden = false;
   const p = parseMediaUrl(m.url), P = PLATFORMS[m.platform], list = visible(), i = list.findIndex(x => x.id === m.id), nxt = list.slice(i + 1, i + 4);
   const embedOk = p.ok && p.embedUrl && ALLOWED_EMBED.test(p.embedUrl);
-  box.innerHTML = `<div class="stage-card" style="--pc:${P.color}"><div class="stage-top"><span class="plat" style="--pc:${P.color}">${P.label}</span><span class="muted small">${kindLabel(m.kind)} · ${esc(comms.get(m.community_id)?.preferred_name || '')}</span></div>
-    ${embedOk ? `<iframe id="mframe" class="mframe" style="height:${p.height}px" src="${esc(p.embedUrl)}" title="${esc(m.title)}" allow="autoplay; encrypted-media; clipboard-write; fullscreen; picture-in-picture" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-presentation allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>`
+  box.innerHTML = `<div class="stage-card" style="--pc:${P.color}"><div class="stage-top"><span class="plat" style="--pc:${P.color}">${P.label}</span><span class="pip-title">${esc(m.title)}</span><span class="muted small stage-sub">${kindLabel(m.kind)} · ${esc(comms.get(m.community_id)?.preferred_name || '')}</span>
+      <span class="stage-win"><button class="iconbtn" type="button" data-step="-1" aria-label="Previous" ${i <= 0 ? 'disabled' : ''}>⏮</button><button class="iconbtn" type="button" data-step="1" aria-label="Next" ${i < 0 || i >= list.length - 1 ? 'disabled' : ''}>⏭</button><button class="iconbtn" type="button" data-pip-toggle aria-label="Minimise or expand the player" id="pipbtn">▾</button><button class="iconbtn" type="button" data-close-player aria-label="Close the player">✕</button></span></div>
+    ${embedOk ? `<iframe id="mframe" class="mframe" data-kind="${esc(m.kind)}" style="height:${p.height}px;--fh:${p.height}px" src="${esc(p.embedUrl)}" title="${esc(m.title)}" allow="autoplay; encrypted-media; clipboard-write; fullscreen; picture-in-picture" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-presentation allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>`
       : `<div class="linkout"><p>${P.label} does not allow playing inside other apps.</p><a class="btn btn-gold" href="${esc(m.url)}" target="_blank" rel="noopener noreferrer">Open in ${P.label}</a></div>`}
     <h3>${esc(m.title)}</h3>${m.artist ? `<p class="mart">${esc(m.artist)}</p>` : ''}
-    <div class="stage-ctl"><button class="iconbtn" data-step="-1" aria-label="Previous" ${i <= 0 ? 'disabled' : ''}>⏮</button><button class="iconbtn" data-step="1" aria-label="Next" ${i < 0 || i >= list.length - 1 ? 'disabled' : ''}>⏭</button>
+    <div class="stage-ctl">
       <button class="btn btn-sm btn-ghost" id="slike" data-like>♡ <b id="lc">0</b></button><button class="btn btn-sm btn-ghost" data-share="${esc(m.id)}">Share to a community</button>${embedOk ? `<a class="btn btn-sm btn-ghost" href="${esc(m.url)}" target="_blank" rel="noopener noreferrer">Open in ${P.label}</a>` : ''}</div>
     <div class="listeners" id="lis"></div>
     ${nxt.length ? `<div class="upnext"><b>Up next</b>${nxt.map(x => `<button class="un" data-play="${esc(x.id)}"><span class="plat sm" style="--pc:${PLATFORMS[x.platform].color}">${PLATFORMS[x.platform].glyph}</span><span>${esc(x.title)}</span></button>`).join('')}</div>` : ''}</div>`;
   const frame = $('mframe'); if (frame) autoNext(m, frame);
+  if (wasHidden) { const r = slot.getBoundingClientRect(); setPip(r.bottom < 70 || r.top > innerHeight); } else syncPipBtn();
   loadEngagement('media', m.id, user?.id).then(e => { $('lc').textContent = e.likes; $('slike').dataset.liked = e.liked; $('slike').firstChild.textContent = e.liked ? '♥ ' : '♡ '; }).catch(() => {});
   joinListening(m.id, user, list2 => { const n = list2.length; $('lis') && ($('lis').innerHTML = n ? `<span class="livedot"></span>${n} listening now ${list2.slice(0, 4).map(u => avatarHtml(u.name, u.avatar, 'av')).join('')}` : ''); }).then(h => { listening = h; });
 }
-function play(id) { current = items.find(m => m.id === id) || null; stage(current); feed(); if (matchMedia('(max-width:900px)').matches) $('mstage').scrollIntoView({ behavior: 'smooth', block: 'start' }); history.replaceState(null, '', current ? `?m=${current.id}` : location.pathname); }
+function play(id) { current = items.find(m => m.id === id) || null; stage(current); feed(); history.replaceState(null, '', current ? `?m=${current.id}` : location.pathname); }
+// ---------- mini player (picture-in-picture style) ----------
+// The player is one element that is switched between "full" (in the page) and "mini" (floating, always visible).
+// It is never moved in the page, so the music does not restart when it switches.
+let pipLocked = false;
+function syncPipBtn() { const d = $('mdock'), b = $('pipbtn'); if (b && d) { const on = d.classList.contains('is-pip'); b.textContent = on ? '▴' : '▾'; b.setAttribute('aria-label', on ? 'Expand the player' : 'Minimise the player'); } }
+function setPip(on) {
+  const d = $('mdock'), slot = $('mstage'); if (!d || slot.hidden || d.classList.contains('is-pip') === on) return syncPipBtn();
+  if (on) slot.style.minHeight = d.offsetHeight + 'px'; else slot.style.minHeight = '';   // keep the page from jumping
+  d.classList.toggle('is-pip', on); syncPipBtn();
+}
+if ('IntersectionObserver' in window) new IntersectionObserver(([e]) => { if (!$('mstage').hidden && !pipLocked) setPip(e.intersectionRatio < 0.5); }, { rootMargin: '-64px 0px 0px 0px', threshold: [0, 0.25, 0.5, 0.75, 1] }).observe($('mstage'));   // mini once less than half of it is on screen
+function closePlayer() { current = null; pipLocked = false; stage(null); feed(); history.replaceState(null, '', location.pathname); }
+
+// A short "Pick something to play" pop-up, shown only the very first time this browser opens the page.
+function firstVisitHint() {
+  try { if (localStorage.getItem('atlas.media.hint') === '1') return; localStorage.setItem('atlas.media.hint', '1'); } catch { return; }   // storage blocked: skip rather than nag every visit
+  const el = document.createElement('div'); el.className = 'hint-pop'; el.setAttribute('role', 'status');
+  el.innerHTML = '<div class="hint-card"><div class="sunmark" aria-hidden="true"></div><h3>Pick something to play</h3><p>Press Play on any card. The player follows you as you scroll.</p></div>';
+  document.body.append(el); requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('in')));
+  const done = () => { el.classList.remove('in'); setTimeout(() => el.remove(), 450); };
+  setTimeout(done, 4500); el.addEventListener('click', done);
+}
+firstVisitHint();
+
 function step(n) { const list = visible(), i = list.findIndex(m => m.id === current?.id), t = list[i + n]; if (t) play(t.id); }
 
 // ---------- dialogs ----------
@@ -119,8 +146,10 @@ document.addEventListener('click', async e => {
   const pl = t.closest('[data-play]'); if (pl) return play(pl.dataset.play);
   const sh = t.closest('[data-share]'); if (sh) return shareDialog(sh.dataset.share);
   const st = t.closest('[data-step]'); if (st) return step(+st.dataset.step);
+  if (t.closest('[data-close-player]')) return closePlayer();
+  if (t.closest('[data-pip-toggle]')) { const mini = $('mdock').classList.contains('is-pip'); if (mini) { pipLocked = false; setPip(false); $('mstage').scrollIntoView({ behavior: 'smooth', block: 'center' }); } else { pipLocked = true; setPip(true); } return; }
   if (t.closest('#m-add') || t.closest('[data-add]')) return addDialog();
-  const del = t.closest('[data-del]'); if (del && confirm('Remove this from the community?')) { try { await deleteMedia(del.dataset.del); if (current?.id === del.dataset.del) { current = null; stage(null); } items = await loadMedia(); tabs(); feed(); toast('Removed.'); } catch (err) { toast(err.message); } return; }
+  const del = t.closest('[data-del]'); if (del && confirm('Remove this from the community?')) { try { await deleteMedia(del.dataset.del); if (current?.id === del.dataset.del) { current = null; pipLocked = false; stage(null); } items = await loadMedia(); tabs(); feed(); toast('Removed.'); } catch (err) { toast(err.message); } return; }
   const tb = t.closest('[data-t]'); if (tb) { tab = tb.dataset.t; tabs(); feed(); return; }
   if (t.closest('[data-like]')) { if (!user) return needSignIn(); const b = $('slike'), liked = b.dataset.liked === 'true'; try { await toggleLike('media', current.id, user, liked); const n = +$('lc').textContent + (liked ? -1 : 1); $('lc').textContent = Math.max(0, n); b.dataset.liked = String(!liked); b.firstChild.textContent = liked ? '♡ ' : '♥ '; } catch (err) { toast(err.message); } }
 });
@@ -134,7 +163,7 @@ $('dlg').addEventListener('click', e => { if (e.target === $('dlg')) $('dlg').cl
     (await loadCommunities()).rows.forEach(c => comms.set(c.id, c));
     $('mc').insertAdjacentHTML('beforeend', [...comms.values()].map(c => `<option value="${esc(c.id)}">${esc(c.preferred_name)}</option>`).join(''));
     $('mp').insertAdjacentHTML('beforeend', Object.entries(PLATFORMS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join(''));
-    items = await loadMedia(); tabs(); feed(); stage(null);
+    items = await loadMedia(); tabs(); feed();
     const want = url.searchParams.get('m'); if (want && items.some(m => m.id === want)) { play(want); document.querySelector(`[data-id="${CSS.escape(want)}"]`)?.scrollIntoView({ block: 'center' }); }
   } catch (e) { $('mfeed').innerHTML = `<div class="empty"><h3>Could not load</h3><p>${esc(e.message)}</p></div>`; }
 })();

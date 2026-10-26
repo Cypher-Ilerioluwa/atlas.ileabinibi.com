@@ -50,7 +50,7 @@ If a folder is missing, click **Add file > Upload files** and drag just that fol
 
 ### D1. Run the database files, in order
 
-> **Already ran some files?** Run only the ones you have not run yet, in number order. If you ran 0001 to 0009 before this update, run just **0010** and **0011** now, then `0006_selfcheck.sql` again.
+> **Already ran some files?** Run only the ones you have not run yet, in number order. If you ran 0001 to 0009 before this update, run just **0010**, **0011** and **0012** now, then `0006_selfcheck.sql` again.
 
 Use **Supabase > SQL Editor > New query** for every file. For each file: in GitHub open `supabase` > `migrations` > the file, click the **Copy raw file** icon (two squares, top right), paste into a new Supabase query, press **Run**, and wait for "Success" before the next one. Do not run two files in the same query tab.
 
@@ -64,7 +64,8 @@ Use **Supabase > SQL Editor > New query** for every file. For each file: in GitH
 8. `0009_social_chat.sql` (chat photos, edit and pin, likes and comments, formatted imported posts, live notification badges)
 9. `0010_media.sql` (shared music and playlists). Safe to run again. **If the Media page says "Could not find the table 'public.media_shares' in the schema cache", this file has not been run yet: run it now.** It ends by refreshing Supabase's API cache, so no restart is needed
 10. `0011_house_author.sql` (makes **Ilẹ̀ Abínibí** the author of all content, linking to https://ileabinibi.com/). Safe to run again
-11. `0006_selfcheck.sql` last: it changes nothing and shows OK or MISSING for each part
+11. `0012_push_new_content.sql` (push notification to everyone for every new chat message, shared song and new article, event or record). **Do Part V first**, because this file needs the secret from it. Safe to run again
+12. `0006_selfcheck.sql` last: it changes nothing and shows OK or MISSING for each part
 
 **If a file fails**
 1. Do not run the later files. Scroll the result panel and copy the **red error message in full** (it names the line). Send it to me; one error message is all I need.
@@ -411,6 +412,24 @@ Every post, event and record shows who wrote and edited it. The first name is th
 ## Part U. Fixing "Could not find the table 'public.media_shares' in the schema cache"
 
 The Media page asked Supabase for the table `media_shares`, and Supabase does not have it (or has not noticed it yet). Fix: Supabase > **SQL Editor** > new query > paste all of `supabase/migrations/0010_media.sql` > **Run**. It can be run any number of times and ends with a command that refreshes the API cache. Reload the Media page. If it still shows the message, run `notify pgrst, 'reload schema';` alone in a new query. The app now shows a plain-English version of this message instead of the database wording.
+
+## Part V. Push notifications for everything new
+
+Everyone who has turned on push on their device is notified, as it happens, when: someone sends a **chat message**, someone shares **music**, or a new **article, event, heritage record, landmark, person, institution or organisation** goes live (including posts imported from ileabinibi.com). The person who made it is not notified about their own. Each person can switch "New posts, events and music" and "Chat messages" off in Settings > Notifications.
+
+1. Part Q must be done first (VAPID keys, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` in Netlify).
+2. Make a long random secret (30+ letters and numbers; a password manager can make one). In Netlify > Environment variables add **`PUSH_WEBHOOK_SECRET`** with that text, mark it secret, and **deploy again**.
+3. Open `https://atlas.ileabinibi.com/.netlify/functions/notify-new` in a browser. It must say `"ready":true`. If it lists something under `missing`, add that setting and deploy again.
+4. In Supabase > SQL Editor open `supabase/migrations/0012_push_new_content.sql`, replace `PASTE-THE-SAME-SECRET-AS-IN-NETLIFY` with the same secret, and run it. Do not save the real secret into GitHub.
+5. Test: on a phone, sign in and turn on push (Settings > Notifications > Push notifications on this device). On a second account or device send a chat message. The first phone should buzz within seconds.
+
+Good to know:
+- Posts older than 3 days are never announced, so a big first import does not notify anyone.
+- Messages for a room you already have open on screen do not pop up.
+- Several quick messages in one room replace each other on a phone that is offline, so it is not buried when it reconnects.
+- A very large audience (thousands of devices) can take several seconds per message. If that happens, tell the developer; the sending can be moved to a queue.
+- Web Push has no delivery guarantee: a phone in battery saver may receive it late.
+- If nothing arrives: check the Netlify function log for `notify-new`, check `net._http_response` in Supabase for the call's result (`select * from net._http_response order by created desc limit 5;`), and confirm the secret matches in both places.
 
 ## Part P. Not built yet
 

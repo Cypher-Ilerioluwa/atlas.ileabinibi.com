@@ -24,7 +24,9 @@ self.addEventListener('message', e => { if (e.data === 'SKIP_WAITING') self.skip
 
 self.addEventListener('push', e => {
   let d = {}; try { d = e.data.json(); } catch { d = { body: e.data && e.data.text() }; }
-  e.waitUntil(self.registration.showNotification(d.title || 'Ilẹ̀ Abínibí Atlas', { body: d.body || '', icon: '/assets/icons/icon-192.png', badge: '/assets/icons/favicon.png', data: { url: d.url || '/account/#notifications' } }));
+  const show = () => self.registration.showNotification(d.title || 'Ilẹ̀ Abínibí Atlas', { body: d.body || '', icon: '/assets/icons/icon-192.png', badge: '/assets/icons/favicon.png', data: { url: d.url || '/account/#notifications' }, ...(d.tag ? { tag: d.tag, renotify: true } : {}) });
+  // a chat message for the room the person is already looking at needs no pop-up
+  e.waitUntil(d.open ? self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => (cs.some(c => c.visibilityState === 'visible' && c.focused && c.url.includes(d.open)) ? null : show())) : show());
 });
 self.addEventListener('notificationclick', e => {
   e.notification.close(); const url = (e.notification.data && e.notification.data.url) || '/account/';
