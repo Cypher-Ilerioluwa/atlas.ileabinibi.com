@@ -67,6 +67,7 @@ document.addEventListener('click', e => { const b = e.target.closest('.navtabs b
 // ---- scroll reveal ----
 const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } }), { rootMargin: '0px 0px -8% 0px', threshold: 0.05 }) : null;
 function scan(r = document) { r.querySelectorAll('.reveal:not(.in)').forEach((el, i) => { if (!io || reduce) { el.classList.add('in'); return; } el.style.setProperty('--d', Math.min(i % 8, 7) * 55 + 'ms'); io.observe(el); }); }
+export { scan as revealScan };
 scan(); new MutationObserver(m => { for (const x of m) for (const n of x.addedNodes) if (n.nodeType === 1) { if (n.matches?.('.reveal')) scan(n.parentNode); else if (n.querySelector?.('.reveal')) scan(n); } }).observe(document.body, { childList: true, subtree: true });
 
 export function countUp(el, to, ms = 900) {

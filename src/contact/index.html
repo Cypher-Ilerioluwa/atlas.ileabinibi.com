@@ -1,0 +1,30 @@
+<!--page title="Contact | Ilẹ̀ Abínibí Atlas" desc="Contact the Ilẹ̀ Abínibí team about the Atlas, privacy requests, corrections or reports about content."-->
+<!doctype html>
+<html lang="en">
+<head>
+<!--include:head-->
+</head>
+<body>
+<!--include:header-->
+<main id="main">
+  <nav class="crumbs" aria-label="Breadcrumb"><div class="wrap"><ol><li><a href="/">Home</a></li><li aria-current="page">Contact</li></ol></div></nav>
+  <div class="wrap prose legal">
+    <div class="page-head"><h1>Contact</h1><p class="lede" style="font-size:var(--step-1)">How to reach the team behind the Atlas.</p><p class="muted small">Last updated 27 October 2026</p></div>
+
+    <h2>Questions, corrections and requests</h2>
+    <p>For questions about the Atlas, privacy requests (access, correction or deletion of your information), reports about a message or photo, or ideas for improving the site, reach the Ilẹ̀ Abínibí team here:</p>
+    <p id="contact-mail" class="contact-card" hidden></p>
+    <ul>
+      <li><a href="https://ileabinibi.com/" rel="noopener">ileabinibi.com</a>, the main Ilẹ̀ Abínibí website.</li>
+      <li><a href="https://ileabinibi.com/corrections-policy/" rel="noopener">Corrections policy</a>, to report a mistake in an entry.</li>
+      <li><a href="/contribute/">Contribute</a>, to add or improve entries yourself.</li>
+    </ul>
+    <h2>Reporting something in the chat or on a post</h2>
+    <p>Tell us what you saw and where (the room or page address and, if you can, the time). We will review it and remove content that breaks the <a href="/terms/">community rules</a>.</p>
+
+  </div>
+</main>
+<!--include:footer-->
+<script type="module">import { config } from "/js/config.js"; const e = config.contactEmail; if (e) { const p = document.getElementById("contact-mail"); p.hidden = false; p.innerHTML = "Email: <a href=\"mailto:" + encodeURI(e) + "\">" + e.replace(/[<>&\"]/g, "") + "</a>"; }</script>
+</body>
+</html>

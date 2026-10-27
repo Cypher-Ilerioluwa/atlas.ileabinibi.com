@@ -1,0 +1,62 @@
+/* ===== motion.css: extra polish and animation (all of it switches off for people who prefer reduced motion) ===== */
+
+/* --- noscript note --- */
+.noscript{margin:0;padding:.7rem 1rem;background:color-mix(in srgb,var(--brand-gold) 22%,var(--surface));border-bottom:1px solid var(--line);text-align:center;font-weight:600}
+
+/* --- community strip: slow, endless scroll of every community's emblem --- */
+.cm-section{overflow:hidden}
+.cm-strip{position:relative;overflow:hidden;padding:.35rem 0 .6rem;-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.cm-track{display:flex;width:max-content;animation:cm-scroll 80s linear infinite}
+.cm-set{display:flex;gap:.65rem;padding-right:.65rem}
+.cm-chip{display:inline-flex;align-items:center;gap:.55rem;padding:.35rem 1rem .35rem .4rem;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--ink);font-weight:700;white-space:nowrap;text-decoration:none;transition:transform .25s var(--ease),border-color .2s,box-shadow .25s,background .2s}
+.cm-chip:hover,.cm-chip:focus-visible{transform:translateY(-3px);border-color:var(--brand-gold);box-shadow:0 10px 22px rgba(60,36,20,.16);background:color-mix(in srgb,var(--brand-gold) 10%,var(--surface))}
+.cm-chip .cbadge{transition:transform .35s var(--ease)}.cm-chip:hover .cbadge{transform:rotate(-8deg) scale(1.08)}
+.cm-strip:hover .cm-track,.cm-strip:focus-within .cm-track{animation-play-state:paused}
+@keyframes cm-scroll{to{transform:translateX(-50%)}}
+
+/* --- section headings: a gold line draws itself in --- */
+.section-head h2{position:relative}
+.section-head.reveal h2::after{content:"";display:block;height:3px;width:0;margin-top:.4rem;border-radius:3px;background:var(--brand-gold);transition:width .8s .25s var(--ease)}
+.section-head.reveal.in h2::after{width:46px}
+
+/* --- buttons: ripple on press, soft shine on the gold ones --- */
+.btn .ripple{position:absolute;border-radius:50%;pointer-events:none;background:rgba(255,255,255,.45);transform:scale(0);animation:ripple .6s var(--ease) forwards}
+@keyframes ripple{to{transform:scale(1);opacity:0}}
+.btn-gold::before{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.55) 50%,transparent 65%);transform:translateX(-120%);pointer-events:none}
+@media (hover:hover){.btn-gold:hover::before{transform:translateX(120%);transition:transform .8s var(--ease)}}
+.btn:focus-visible,.chip:focus-visible,.cm-chip:focus-visible{outline:3px solid var(--brand-gold);outline-offset:3px}
+
+/* --- cards: images zoom gently, titles pick up the gold --- */
+.postcard .cover,.card .cover{transition:transform .6s var(--ease)}.postcard:hover .cover,.card:hover .cover{transform:scale(1.04)}
+.postcard h3 a{background:linear-gradient(var(--brand-gold),var(--brand-gold)) 0 100%/0 2px no-repeat;transition:background-size .35s var(--ease);text-decoration:none}
+.postcard:hover h3 a,.postcard h3 a:focus-visible{background-size:100% 2px}
+
+/* --- hero: a calmer headline size so the search box stays on screen --- */
+.hero h1{font-size:clamp(2.2rem,1.2rem + 3.4vw,4rem)}
+
+/* --- hero: the sun drifts a little as you scroll (value set by motion.js) --- */
+.hero .sun{translate:0 calc(var(--sy,0) * .18px)}
+
+/* --- back to top --- */
+.to-top{position:fixed;right:max(1rem,env(safe-area-inset-right,0px));bottom:max(1.2rem,env(safe-area-inset-bottom,0px));z-index:55;width:46px;height:46px;display:grid;place-items:center;border:0;border-radius:50%;background:var(--brand-earth);color:#fff;box-shadow:0 10px 24px rgba(40,20,10,.35);cursor:pointer;opacity:0;transform:translateY(14px) scale(.85);pointer-events:none;transition:opacity .3s,transform .35s var(--ease),background .2s}
+.to-top.show{opacity:1;transform:none;pointer-events:auto}.to-top:hover{background:var(--brand-brown)}.to-top:active{transform:scale(.92)}
+.to-top svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+@media (max-width:900px){.to-top{bottom:calc(4.9rem + env(safe-area-inset-bottom,0px))}}
+body:has(.stage-dock.is-pip) .to-top,body.chat-open .to-top{display:none}
+
+/* --- tab bar: the chosen icon pops --- */
+.tabbar [aria-current=page] svg{animation:tab-pop .5s cubic-bezier(.34,1.56,.64,1)}
+@keyframes tab-pop{0%{transform:scale(.7)}100%{transform:scale(1)}}
+
+/* --- legal pages and static articles --- */
+.legal h2{margin-top:var(--space-6)}.legal .page-head{margin-bottom:var(--space-5)}
+.static-post .static-cta{margin-top:var(--space-6)}
+.foot-links{display:flex;flex-wrap:wrap;gap:.2rem 1.1rem;justify-content:flex-end}
+@media (max-width:640px){.foot-links{justify-content:center}}
+.contact-card{padding:var(--space-4);border-radius:var(--radius-m);background:var(--surface);border:1px solid var(--line);font-weight:700}
+
+@media (prefers-reduced-motion:reduce){
+  .cm-track{animation:none;overflow-x:auto;width:auto}.cm-set[aria-hidden=true]{display:none}.cm-strip{overflow-x:auto;-webkit-mask-image:none;mask-image:none}
+  .hero .sun{translate:none}
+  .btn-gold::before,.btn .ripple{display:none}.tabbar [aria-current=page] svg{animation:none}.to-top{transition:opacity .2s}
+}

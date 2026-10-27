@@ -31,7 +31,7 @@ function wire(item, title) {
   $('post').addEventListener('click', async e => {
     if (e.target.closest('[data-like]')) { if (!user) return need(); try { await toggleLike(type, itemId, user, eng.liked); eng.likes += eng.liked ? -1 : 1; eng.liked = !eng.liked; refreshBar(); } catch (err) { toast(err.message); } }
     if (e.target.closest('[data-save]')) { if (!user) return need(); try { await toggleSave(type, itemId, user, eng.saved); eng.saved = !eng.saved; refreshBar(); toast(eng.saved ? 'Saved to your dashboard.' : 'Removed from saved.'); } catch (err) { toast(err.message); } }
-    if (e.target.closest('[data-share]')) { const data = { title, text: title, url: location.href }; try { if (navigator.share) await navigator.share(data); else { await navigator.clipboard.writeText(location.href); toast('Link copied.'); } } catch { /* cancelled */ } }
+    if (e.target.closest('[data-share]')) { const url = type === 'article' ? `${config.siteUrl.replace(/\/$/, '')}/p/${encodeURIComponent(slug)}/` : location.href, data = { title, text: title, url }; try { if (navigator.share) await navigator.share(data); else { await navigator.clipboard.writeText(url); toast('Link copied.'); } } catch { /* cancelled */ } }   // articles are shared through their preview page so WhatsApp, X and Facebook show a proper card
     const del = e.target.closest('[data-delc]'); if (del && confirm('Delete this comment?')) { const id = del.closest('.comment').dataset.id; try { await deleteComment(id); eng.comments = eng.comments.filter(c => c.id !== id); refreshComments(); } catch (err) { toast(err.message); } }
   });
   $('post').addEventListener('input', e => { if (e.target.id === 'ctext') $('ccount').textContent = e.target.value.length + ' / 1000'; });
@@ -56,6 +56,7 @@ const refreshComments = () => { $('comments').outerHTML = comments(); };
     if (type === 'article') meta = [TOPIC_LABEL[item.topic], item.region_text, fmtDate(item.published_at)];
     if (type === 'event') { const kd = item.date_start ? K.fromGregorian(item.date_start) : null; meta = ['Event', item.location_text, item.date_start ? fmtDate(item.date_start) + (item.date_end ? ' – ' + fmtDate(item.date_end) : '') : 'Date to be confirmed', kd ? `${kd.month}, day ${kd.dayOfMonth} (Kọ́jọ́dá)` : null]; }
     if (type === 'heritage_record') meta = [item.category && item.category.replace(/_/g, ' '), item.period_text, item.language];
+    { const upd = item.updated_at || item.last_reviewed_at, was = item.published_at; if (upd && fmtDate(upd) && fmtDate(upd) !== fmtDate(was) && meta.length) meta.push(`${item.updated_at ? 'Updated' : 'Reviewed'} ${fmtDate(upd)}`); }
     eng = await loadEngagement(type, itemId, user?.id).catch(() => eng);
     const bodyHtml = item.body_html ? sanitize(item.body_html) : `<p>${esc(text).replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>')}</p>`;
     $('post').innerHTML = `<div class="eyebrow">${esc(T.label)}${item.evidence ? ` · <span class="badge ${esc(item.evidence)}">${esc(EV[item.evidence] || item.evidence)}</span>` : ''}</div>

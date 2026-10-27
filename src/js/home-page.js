@@ -9,6 +9,8 @@ import * as K from './calendar/kojoda.js';
 import { install, canInstall, isStandalone } from './install.js';
 
 const $ = id => document.getElementById(id);
+// replace a block's content; if it was already real (prerendered) content, show the new cards at once instead of fading them in again
+function swap(el, html) { const real = el.firstElementChild && !el.firstElementChild.classList.contains('sk'); el.innerHTML = html; if (real) el.querySelectorAll('.reveal').forEach(n => n.classList.add('in')); }
 const todayG = K.todayParts(), kt = K.fromGregorian(todayG), M3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const dayKey = `${todayG.year}-${todayG.month + 1}-${todayG.day}`;
 const daySeed = Math.floor(Date.UTC(todayG.year, todayG.month, todayG.day) / 864e5);
@@ -78,7 +80,7 @@ function festivalCard() {
 (async () => {
   todayCard(); wireSearch();
   // topics
-  $('topics').innerHTML = TOPICS.map(t => `<a class="topic reveal" href="/posts/?topic=${t}"><span aria-hidden="true">${TOPIC_ICON[t]}</span><b>${TOPIC_LABEL[t]}</b></a>`).join('');
+  if (!$('topics').children.length) $('topics').innerHTML = TOPICS.map(t => `<a class="topic reveal" href="/posts/?topic=${t}"><span aria-hidden="true">${TOPIC_ICON[t]}</span><b>${TOPIC_LABEL[t]}</b></a>`).join('');
   $('install-btn').addEventListener('click', () => install());
   if (isStandalone()) $('install-cta').hidden = true;
   try {
@@ -90,7 +92,7 @@ function festivalCard() {
     $('widgets').innerHTML = quizCard(quiz) + featuredCard(comms.length ? comms[daySeed % comms.length] : null) + festivalCard();
     wireQuiz(quiz);
     const latest = [...articles].sort((a, b) => String(b.published_at).localeCompare(String(a.published_at))).slice(0, 3), cr = await loadCredits('article', latest.map(a => a.id));
-    $('latest').innerHTML = latest.length ? latest.map(a => postCard(a, { credits: cr.get(a.id) || [] })).join('') : '<div class="empty" style="grid-column:1/-1"><h3>No posts yet</h3><p>Be the first to contribute.</p><a class="btn" href="/contribute/">Contribute</a></div>';
+    swap($('latest'), latest.length ? latest.map(a => postCard(a, { credits: cr.get(a.id) || [] })).join('') : '<div class="empty" style="grid-column:1/-1"><h3>No posts yet</h3><p>Be the first to contribute.</p><a class="btn" href="/contribute/">Contribute</a></div>');
     // "Read more": the latest posts that come from ileabinibi.com, opened inside the Atlas (atlas.ileabinibi.com)
     const imported = [...articles].filter(a => a.external_url).sort((a, b) => String(b.published_at).localeCompare(String(a.published_at))).slice(0, 3);
     if (imported.length) {
@@ -99,7 +101,7 @@ function festivalCard() {
     }
     const iso = `${todayG.year}-${String(todayG.month + 1).padStart(2, '0')}-${String(todayG.day).padStart(2, '0')}`;
     const up = events.filter(e => !e.date_start || (e.date_end || e.date_start) >= iso).sort((a, b) => String(a.date_start || '9').localeCompare(String(b.date_start || '9'))).slice(0, 3);
-    $('upcoming').innerHTML = up.length ? up.map(e => `<a class="ev reveal" href="/post/?t=event&s=${encodeURIComponent(e.slug)}" style="text-decoration:none;color:inherit"><div class="date">${e.date_start ? `<b>${new Date(e.date_start + 'T00:00:00').getDate()}</b><span>${M3[new Date(e.date_start + 'T00:00:00').getMonth()]}</span>` : '<span>TBC</span>'}</div><div><h3 style="font-size:var(--step-0)">${esc(e.name)}</h3><p class="muted small" style="margin:0">${[e.location_text, e.region_text].filter(Boolean).map(esc).join(' · ')}</p>${e.date_start ? `<p class="small" style="margin:.2rem 0 0"><b>Kọ́jọ́dá:</b> ${esc(K.fromGregorian(e.date_start).month)}, day ${K.fromGregorian(e.date_start).dayOfMonth}</p>` : ''}</div></a>`).join('') : '<div class="empty"><h3>No upcoming events</h3><a class="btn" href="/contribute/?type=event">Share an event</a></div>';
+    swap($('upcoming'), up.length ? up.map(e => `<a class="ev reveal" href="/post/?t=event&s=${encodeURIComponent(e.slug)}" style="text-decoration:none;color:inherit"><div class="date">${e.date_start ? `<b>${new Date(e.date_start + 'T00:00:00').getDate()}</b><span>${M3[new Date(e.date_start + 'T00:00:00').getMonth()]}</span>` : '<span>TBC</span>'}</div><div><h3 style="font-size:var(--step-0)">${esc(e.name)}</h3><p class="muted small" style="margin:0">${[e.location_text, e.region_text].filter(Boolean).map(esc).join(' · ')}</p>${e.date_start ? `<p class="small" style="margin:.2rem 0 0"><b>Kọ́jọ́dá:</b> ${esc(K.fromGregorian(e.date_start).month)}, day ${K.fromGregorian(e.date_start).dayOfMonth}</p>` : ''}</div></a>`).join('') : '<div class="empty"><h3>No upcoming events</h3><a class="btn" href="/contribute/?type=event">Share an event</a></div>');
   } catch (e) { $('stats').innerHTML = ''; $('latest').innerHTML = `<div class="empty" style="grid-column:1/-1"><h3>Could not load the latest content</h3><p>${esc(e.message)}</p></div>`; }
   try {
     const m = await recentMessages('general', 3);

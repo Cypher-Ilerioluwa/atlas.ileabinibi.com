@@ -13,12 +13,19 @@
 <script>try{if(!sessionStorage.getItem("atlas-splash")){document.documentElement.dataset.splash="1";sessionStorage.setItem("atlas-splash","1")}}catch(e){}</script>
 <script>try{var t=localStorage.getItem("atlas-theme");if(t==="system")t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";if(t==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
 <meta property="og:site_name" content="Ilẹ̀ Abínibí Atlas">
-<meta property="og:type" content="website">
+<meta property="og:locale" content="en">
+<meta property="og:type" content="{{ogtype}}">
 <meta property="og:title" content="{{title}}">
 <meta property="og:description" content="{{desc}}">
 <meta property="og:url" content="{{canonical}}">
-<meta property="og:image" content="{{site}}/assets/icons/icon-512.png">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="{{image}}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Ilẹ̀ Abínibí Atlas: Mapping Our Roots. Connecting Our People.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{title}}">
+<meta name="twitter:description" content="{{desc}}">
+<meta name="twitter:image" content="{{image}}">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" type="image/png" href="/assets/icons/favicon.png">
 <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
@@ -29,3 +36,5 @@
 <link rel="stylesheet" href="/css/components.css">
 <link rel="stylesheet" href="/css/app.css">
 <link rel="stylesheet" href="/css/polish.css">
+<link rel="stylesheet" href="/css/motion.css">
+{{jsonld}}

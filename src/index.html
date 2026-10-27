@@ -1,4 +1,4 @@
-<!--page title="Ilẹ̀ Abínibí Atlas: Abínibí heritage map, community, calendar and events" desc="Explore Abínibí communities on a live map, read their stories, join the conversation, follow the Kọ́jọ́dá calendar and share events from anywhere in the world." nav="home"-->
+<!--page title="Ilẹ̀ Abínibí Atlas | Yorùbá heritage map and calendar" desc="A free, community-built map and archive of Yorùbá heritage: places, stories, festivals and the Kọ́jọ́dá calendar, from Ilé-Ifẹ̀ to Havana." nav="home"-->
 <!doctype html>
 <html lang="en">
 <head>
@@ -7,13 +7,14 @@
 <body>
 <!--include:header-->
 <main id="main">
+  <noscript><p class="noscript">The Atlas works best with JavaScript on. The map, chat and calendar need it, but you can still browse the links below.</p></noscript>
   <section class="hero">
     <div class="sun" aria-hidden="true"><div class="rays"></div><div class="rays2"></div><div class="disc"></div></div>
     <div class="wrap hero-grid">
       <div>
         <div class="eyebrow reveal">Mapping Our Roots</div>
         <h1 class="reveal">Your roots, mapped, shared and lived every day</h1>
-        <p class="lede reveal">Explore Abínibí communities, read their stories, follow the Kọ́jọ́dá calendar and meet people from every community, wherever they live.</p>
+        <p class="lede reveal">A free, community-built map and archive of Yorùbá heritage: places, stories, festivals and the Kọ́jọ́dá calendar, for Yorùbá people and friends everywhere.</p>
         <form class="hero-search reveal" action="/search/" method="get" role="search" autocomplete="off">
           <div class="sbox"><label class="visually-hidden" for="hq">Search communities, posts and records</label>
           <input id="hq" name="q" type="search" placeholder="Search a town, a story or a tradition" role="combobox" aria-expanded="false" aria-controls="hsug">
@@ -27,26 +28,29 @@
     <svg class="hills" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true"><path class="h1" d="M0 60C200 30 420 78 640 52S1020 20 1200 44V120H0Z"/><path class="h2" d="M0 92C220 66 480 112 720 88S1050 70 1200 84V120H0Z"/></svg>
   </section>
 
-  <section class="section tight"><div class="wrap"><div class="stats-strip" id="stats"></div></div></section>
+  <section class="section tight"><div class="wrap"><div class="stats-strip" id="stats"><!--prerender:stats--></div></div></section>
+
+  <section class="section tight cm-section" aria-labelledby="cm-h"><div class="wrap"><div class="section-head"><h2 id="cm-h">Explore the communities</h2><a href="/map/">Open the map →</a></div></div>
+    <div class="cm-strip" id="cm-strip"><!--prerender:communities--></div></section>
 
   <section class="section tight"><div class="wrap">
     <div class="section-head"><h2>Today for you</h2><span class="muted small">A little something new every day</span></div>
-    <div class="widgets" id="widgets"></div>
+    <div class="widgets" id="widgets"><!--prerender:widgets--></div>
   </div></section>
 
   <section class="section"><div class="wrap">
     <div class="section-head"><h2>Latest posts</h2><a href="/posts/">All posts →</a></div>
-    <div class="grid cols-3" id="latest"><div class="article sk"><div class="skel" style="height:7rem"></div></div></div>
+    <div class="grid cols-3" id="latest"><!--prerender:latest--></div>
   </div></section>
 
   <section class="section tight"><div class="wrap">
     <div class="section-head"><h2>Browse by topic</h2></div>
-    <div class="topics" id="topics"></div>
+    <div class="topics" id="topics"><!--prerender:topics--></div>
   </div></section>
 
   <section class="section"><div class="wrap two-col">
-    <div><div class="section-head"><h2>Coming up</h2><a href="/events/">All events →</a></div><div class="stack" id="upcoming"></div></div>
-    <div><div class="section-head"><h2>In the conversation</h2><a href="/community/#discuss">Open the room →</a></div><div class="chat-teaser" id="teaser"></div></div>
+    <div><div class="section-head"><h2>Coming up</h2><a href="/events/">All events →</a></div><div class="stack" id="upcoming"><!--prerender:upcoming--></div></div>
+    <div><div class="section-head"><h2>In the conversation</h2><a href="/community/#discuss">Open the room →</a></div><div class="chat-teaser" id="teaser"><!--prerender:teaser--></div></div>
   </div></section>
 
   <section class="section band" id="more-band" hidden>

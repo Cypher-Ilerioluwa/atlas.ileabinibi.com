@@ -50,7 +50,7 @@ If a folder is missing, click **Add file > Upload files** and drag just that fol
 
 ### D1. Run the database files, in order
 
-> **Already ran some files?** Run only the ones you have not run yet, in number order. If you ran 0001 to 0009 before this update, run just **0010**, **0011**, **0012** and **0013** now, then `0006_selfcheck.sql` again.
+> **Already ran some files?** Run only the ones you have not run yet, in number order. If you ran 0001 to 0009 before this update, run just **0010** to **0014** now, then `0006_selfcheck.sql` again.
 
 Use **Supabase > SQL Editor > New query** for every file. For each file: in GitHub open `supabase` > `migrations` > the file, click the **Copy raw file** icon (two squares, top right), paste into a new Supabase query, press **Run**, and wait for "Success" before the next one. Do not run two files in the same query tab.
 
@@ -66,7 +66,8 @@ Use **Supabase > SQL Editor > New query** for every file. For each file: in GitH
 10. `0011_house_author.sql` (makes **Ilẹ̀ Abínibí** the author of all content, linking to https://ileabinibi.com/). Safe to run again
 11. `0012_push_new_content.sql` (push notification to everyone for every new chat message, shared song and new article, event or record). **Do Part V first**, because this file needs the secret from it. Safe to run again
 12. `0013_chat_search.sql` (search inside chat messages, ignoring accents). Safe to run again
-13. `0006_selfcheck.sql` last: it changes nothing and shows OK or MISSING for each part
+13. `0014_public_updated_at.sql` (shows "Updated <date>" on articles and events). Safe to run again
+14. `0006_selfcheck.sql` last: it changes nothing and shows OK or MISSING for each part
 
 **If a file fails**
 1. Do not run the later files. Scroll the result panel and copy the **red error message in full** (it names the line). Send it to me; one error message is all I need.
@@ -440,6 +441,14 @@ Good to know:
 - Capital letters and accents are ignored ("ibadan" finds "Ìbàdàn", "olojo" finds "Ọlọ́jọ́"). The sender's name is searched too.
 - If it says "Message search is not switched on yet", run `0013_chat_search.sql` in Supabase.
 - Searching reads about the newest 100 matches. For very large histories (hundreds of thousands of messages) tell the developer so an index can be added.
+
+## Part X. Search visibility, link previews and legal pages
+
+- **Real content in the page source.** At every Netlify build the site reads the public posts, events and communities (using the public Supabase URL and anon key already in `src/js/config.js`) and writes them into the home page and into one static page per article at `/p/<slug>/`. Google and WhatsApp see real text and a proper preview card. If the keys are empty or Supabase cannot be reached the build still succeeds and shows grey placeholders instead. To publish a new post quickly, trigger a deploy (or add a Netlify build hook to run nightly).
+- **Sharing.** The Share button on an article now shares `https://atlas.ileabinibi.com/p/<slug>/`. People who open it are sent straight to the full article; search engines and chat apps read the static page.
+- **Share image.** `src/assets/img/og-default.png` (1200 x 630) is used when a page has no picture of its own. Replace it with your own design if you like, keeping that size.
+- **Titles and descriptions** are kept under 62 and 160 characters (a test checks this).
+- **Legal pages.** `/privacy/`, `/terms/` and `/contact/` are linked from every footer. They are written as plain-language drafts that match what the Atlas does today. **Have a lawyer review them before launch**, and set `contactEmail` in `src/js/config.js` so the Contact page shows an email address.
 
 ## Part P. Not built yet
 

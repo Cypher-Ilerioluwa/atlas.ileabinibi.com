@@ -1,6 +1,7 @@
 // Shared behaviour: mobile menu, service worker, online/offline feedback.
 import { labelAccountLink } from './core.js';
 import './ui.js';
+import './motion.js';
 import { startNotifications } from './notify.js';
 (window.requestIdleCallback ? window.requestIdleCallback(() => startNotifications()) : setTimeout(startNotifications, 800));
 labelAccountLink();
