@@ -2,6 +2,7 @@
 import { getClient } from './supabase.js';
 import { isConfigured } from './core.js';
 import { demoStore, demoSave, newId } from './api.js';
+import { messageMatches } from './chat-search.js';
 const lobbyBus = new Set();
 
 const must = ({ data, error }) => { if (error) throw new Error(error.message); return data; };
@@ -28,12 +29,18 @@ async function live(room, user, onEvent) {
   let lastTyping = 0;
   return {
     live: true,
-    async history() {
-      const messages = must(await c.from('chat_messages').select('*').eq('room', room).order('created_at', { ascending: false }).limit(60)).reverse();
+    async history(around) {
+      let messages, windowed = false;
+      if (around?.at) {   // a search result: the messages just before and after it
+        const sel = () => c.from('chat_messages').select('*').eq('room', room);
+        const older = must(await sel().lte('created_at', around.at).order('created_at', { ascending: false }).limit(25)).reverse();
+        const newer = must(await sel().gt('created_at', around.at).order('created_at', { ascending: true }).limit(25));
+        messages = [...older, ...newer]; windowed = newer.length === 25;
+      } else messages = must(await c.from('chat_messages').select('*').eq('room', room).order('created_at', { ascending: false }).limit(60)).reverse();
       const ids = messages.map(m => m.id);
       const reactions = ids.length ? must(await c.from('chat_reactions').select('*').in('message_id', ids)) : [];
       const reads = must(await c.from('chat_reads').select('*').eq('room', room));
-      return { messages, reactions, reads };
+      return { messages, reactions, reads, windowed };
     },
     async send(body, replyTo, imagePath) { return must(await c.from('chat_messages').insert({ room, user_id: me.id, body: body || '', reply_to: replyTo || null, image_path: imagePath || null }).select().single()); },
     async uploadImage(file) {
@@ -61,7 +68,11 @@ async function preview(room, user, onEvent) {
   if (!d.chat.some(m => m.room === room)) d.chat.push({ id: newId(), room, user_id: sample.id, author_name: sample.name, author_avatar: null, body: 'Welcome to the discussion room. This is a preview: messages stay in this tab.', reply_to: null, created_at: now() });
   return {
     live: false,
-    async history() { const msgs = d.chat.filter(m => m.room === room).slice(-60); return { messages: msgs, reactions: d.chatReactions.filter(r => msgs.some(m => m.id === r.message_id)), reads: d.chatReads.filter(r => r.room === room) }; },
+    async history(around) {
+      const all = d.chat.filter(m => m.room === room), i = around ? all.findIndex(m => m.id === around.id) : -1;
+      const msgs = i >= 0 ? all.slice(Math.max(0, i - 25), i + 26) : all.slice(-60);
+      return { messages: msgs, reactions: d.chatReactions.filter(r => msgs.some(m => m.id === r.message_id)), reads: d.chatReads.filter(r => r.room === room), windowed: i >= 0 && i + 26 < all.length };
+    },
     async uploadImage(file) { if (!/^image\//.test(file.type) || file.size > 3145728) throw new Error('Choose a photo under 3 MB.'); return await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); }); },
     async edit(id, body) { const m = d.chat.find(x => x.id === id); if (m) { m.body = body; m.edited_at = now(); demoSave(); onEvent({ type: 'message_updated', row: m }); } },
     async pin(id, on) { const m = d.chat.find(x => x.id === id); if (m) { m.pinned = on; demoSave(); onEvent({ type: 'message_updated', row: m }); } },
@@ -80,6 +91,16 @@ async function preview(room, user, onEvent) {
     async markRead() {},
     close() { timers.forEach(clearTimeout); }
   };
+}
+
+/** Search messages. q: words (2+ letters); room: one room or all; kind: 'all' | 'photo' | 'link'. Newest first. */
+export async function searchChat({ q = '', room = null, kind = 'all', limit = 40 } = {}) {
+  q = String(q).trim(); if (q.length < 2 && kind === 'all') return [];
+  if (!isConfigured()) { const d = demoStore(); return [...(d.chat || [])].filter(m => (!room || m.room === room) && messageMatches(m, q, kind)).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, limit); }
+  const c = await getClient();
+  const { data, error } = await c.rpc('search_chat', { p_query: q, p_room: room, p_kind: kind === 'all' ? null : kind, p_limit: limit });
+  if (error) throw new Error(/search_chat|schema cache|function/i.test(error.message) ? 'Message search is not switched on yet. An administrator needs to run 0013_chat_search.sql in Supabase.' : error.message);
+  return data || [];
 }
 
 /** The newest few messages of a room, for previews. */

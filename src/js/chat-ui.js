@@ -1,5 +1,6 @@
 // Messenger-style community chat: room list, rich messages, photos, replies, reactions, mentions, edit, pin, read receipts.
-import { createChat, createLobby } from './chat-backend.js';
+import { createChat, createLobby, searchChat } from './chat-backend.js';
+import { highlight, snippet, fold } from './chat-search.js';
 import { esc } from './search.js';
 import { avatarHtml } from './content.js';
 import { toast } from './shell.js';
@@ -30,10 +31,12 @@ export async function mountChat(el, { ctx, rooms, initialRoom, directOpen }) {
   const roomOf = id => rooms.find(r => r.id === id) || rooms[0], roomName = () => roomOf(room).name;
 
   el.innerHTML = `<div class="cx2" id="cx2" data-view="list">
-    <aside class="rl" aria-label="Rooms"><div class="rl-head"><h2>Messages</h2><label class="visually-hidden" for="rl-q">Search rooms</label><input id="rl-q" type="search" placeholder="Search communities"></div><ul class="rl-list" id="rl-list"></ul></aside>
+    <aside class="rl" aria-label="Rooms"><div class="rl-head"><h2>Messages</h2><label class="visually-hidden" for="rl-q">Search rooms and messages</label><input id="rl-q" type="search" placeholder="Search rooms and messages" autocomplete="off" enterkeyhint="search">
+      <div class="rl-filters" role="group" aria-label="Search filter"><button type="button" class="sf on" data-sf="all" aria-pressed="true">All</button><button type="button" class="sf" data-sf="photo" aria-pressed="false">📷 Photos</button><button type="button" class="sf" data-sf="link" aria-pressed="false">🔗 Links and music</button></div></div><ul class="rl-list" id="rl-list"></ul></aside>
     <section class="cx" aria-label="Conversation"><header class="cx-head"><button class="cx-back" id="cx-back" type="button" aria-label="Back to rooms">‹</button><span class="cx-ava" id="cx-ava"></span>
       <div class="cx-title"><b id="cx-name"></b><div class="cx-sub"><span class="livedot" aria-hidden="true"></span><span id="cx-online">Connecting…</span></div></div>
-      <button type="button" class="cx-stack" id="cx-stack" aria-expanded="false" aria-label="Who is online"></button><div class="cx-people" id="cx-people" hidden></div></header>
+      <button type="button" class="cx-find-btn" id="cx-find-btn" aria-expanded="false" aria-controls="cx-find" aria-label="Search this room"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg></button><button type="button" class="cx-stack" id="cx-stack" aria-expanded="false" aria-label="Who is online"></button><div class="cx-people" id="cx-people" hidden></div></header>
+      <div class="cx-find" id="cx-find" hidden><div class="cx-find-bar"><input id="cx-fq" type="search" placeholder="Search in this room" aria-label="Search messages in this room" autocomplete="off" enterkeyhint="search"><button type="button" id="cx-fx" aria-label="Close search">✕</button></div><ul class="cx-fhits" id="cx-fhits" aria-live="polite"></ul></div>
       <button class="cx-pin" id="cx-pin" type="button" hidden></button><div class="cx-typing" id="cx-typing" aria-live="polite"></div>
       <div class="cx-log" id="cx-log" role="log" aria-label="Messages"></div><button type="button" class="cx-down" id="cx-down" hidden aria-label="Jump to newest">↓ <span id="cx-new"></span></button>
       ${can ? `<div class="cx-compose" id="cx-compose"><div class="cx-ment" id="cx-ment" hidden></div><div class="cx-reply" id="cx-reply" hidden></div><div class="cx-att" id="cx-att" hidden></div>
@@ -44,11 +47,29 @@ export async function mountChat(el, { ctx, rooms, initialRoom, directOpen }) {
   const $ = id => el.querySelector('#' + id), root = $('cx2'), log = $('cx-log');
 
   // ---------- room list ----------
+  // message search state (room list)
+  let hits = null, sf = 'all', sT = 0, sSeq = 0, windowed = false;
+  const hitLine = (h, q) => `<i>${esc(h.user_id === user?.id ? 'You' : h.author_name)}:</i> ${h.image_path && !h.body ? '📷 Photo' : highlight(snippet(h.body, q, 90), q)}`;
+  function hitsHtml() {
+    if (hits == null) return '';
+    const q = ($('rl-q').value || '').trim();
+    if (hits === 'loading') return '<li class="rl-sec">Messages</li><li class="rl-note"><span class="spinner"></span> Searching…</li>';
+    if (hits.error) return `<li class="rl-sec">Messages</li><li class="rl-note">${esc(hits.error)}</li>`;
+    const shown = hits.filter(h => rooms.some(r => r.id === h.room));
+    return `<li class="rl-sec">Messages${shown.length ? ` · ${shown.length}${hits.length >= 40 ? '+' : ''}` : ''}</li>` + (shown.length ? shown.map(h => `<li><button type="button" class="rl-hit" data-hit="${esc(h.id)}" data-hroom="${esc(h.room)}" data-at="${esc(h.created_at)}"><span class="rl-av">${communityBadge(roomOf(h.room), 40)}</span><span class="rl-main"><b>${esc(roomOf(h.room).name)}<time>${short(h.created_at)}</time></b><small>${hitLine(h, q)}</small></span></button></li>`).join('') : '<li class="rl-note">No messages found.</li>');
+  }
+  function queueSearch() {
+    clearTimeout(sT); const q = ($('rl-q').value || '').trim(), active = q.length >= 2 || sf !== 'all';
+    if (!active) { hits = null; sSeq++; drawRooms(); return; }
+    hits = 'loading'; drawRooms(); const my = ++sSeq;
+    sT = setTimeout(async () => { try { const r = await searchChat({ q, kind: sf }); if (my === sSeq) { hits = r; drawRooms(); } } catch (e) { if (my === sSeq) { hits = { error: e.message }; drawRooms(); } } }, 280);
+  }
   function drawRooms() {
-    const q = ($('rl-q').value || '').toLowerCase(), list = rooms.filter(r => r.name.toLowerCase().includes(q));
+    const q = fold($('rl-q').value || '').trim(), list = rooms.filter(r => fold(r.name).includes(q));
     const general = list.filter(r => r.id === 'general'), rest = list.filter(r => r.id !== 'general').sort((a, b) => (last.get(b.id)?.created_at || '').localeCompare(last.get(a.id)?.created_at || '') || a.name.localeCompare(b.name));
-    $('rl-list').innerHTML = [...general, ...rest].map(r => { const l = last.get(r.id), n = unread.get(r.id) || 0;
-      return `<li><button type="button" class="rl-item ${r.id === room ? 'on' : ''}" data-room="${esc(r.id)}"><span class="rl-av">${communityBadge(r, 48)}</span><span class="rl-main"><b>${esc(r.name)}</b><small>${l ? `${l.image_path && !l.body ? '📷 Photo' : esc((l.user_id === user?.id ? 'You' : l.author_name) + ': ' + (l.body || '').slice(0, 60))}` : 'No messages yet'}</small></span><span class="rl-meta">${l ? `<time>${short(l.created_at)}</time>` : ''}${n ? `<i class="ub">${n > 99 ? '99+' : n}</i>` : ''}</span></button></li>`; }).join('') || '<li class="muted" style="padding:1rem">No rooms match.</li>';
+    const roomsHtml = [...general, ...rest].map(r => { const l = last.get(r.id), n = unread.get(r.id) || 0;
+      return `<li><button type="button" class="rl-item ${r.id === room ? 'on' : ''}" data-room="${esc(r.id)}"><span class="rl-av">${communityBadge(r, 48)}</span><span class="rl-main"><b>${esc(r.name)}</b><small>${l ? `${l.image_path && !l.body ? '📷 Photo' : esc((l.user_id === user?.id ? 'You' : l.author_name) + ': ' + (l.body || '').slice(0, 60))}` : 'No messages yet'}</small></span><span class="rl-meta">${l ? `<time>${short(l.created_at)}</time>` : ''}${n ? `<i class="ub">${n > 99 ? '99+' : n}</i>` : ''}</span></button></li>`; }).join('');
+    $('rl-list').innerHTML = ((hits != null && roomsHtml ? '<li class="rl-sec">Rooms</li>' : '') + roomsHtml + hitsHtml()) || '<li class="muted" style="padding:1rem">No rooms match.</li>';
   }
   async function loadLobby() {
     lobby = await createLobby({ user, onEvent: ev => {
@@ -97,10 +118,11 @@ export async function mountChat(el, { ctx, rooms, initialRoom, directOpen }) {
     $('cx-typing').innerHTML = t.length ? `<div class="cx-typ"><span class="avs">${t.slice(0, 3).map(u => avatarHtml(u.name, u.avatar, 'av')).join('')}</span><span>${esc(t.length === 1 ? t[0].name + ' is typing' : t.length === 2 ? t[0].name + ' and ' + t[1].name + ' are typing' : t.length + ' people are typing')}</span><i class="dots"><b></b><b></b><b></b></i></div>` : '';
   }
   const near = () => log.scrollHeight - log.scrollTop - log.clientHeight < 80;
-  function scheduleRead() { clearTimeout(markT); markT = setTimeout(() => { if (document.visibilityState === 'visible' && near() && user && root.dataset.view === 'chat') { be?.markRead(); unread.set(room, 0); drawRooms(); } }, 1000); }
+  function scheduleRead() { clearTimeout(markT); markT = setTimeout(() => { if (document.visibilityState === 'visible' && near() && !windowed && user && root.dataset.view === 'chat') { be?.markRead(); unread.set(room, 0); drawRooms(); } }, 1000); }
   const sorted = () => msgs.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
   function onEvent(ev) {
+    if (ev.type === 'message' && windowed) { if (ev.row.user_id !== user?.id) { newCount++; $('cx-down').hidden = false; $('cx-new').textContent = newCount; } return; }
     if (ev.type === 'message') { if (msgs.some(m => m.id === ev.row.id)) return; msgs.push(ev.row); sorted(); const mine = user && ev.row.user_id === user.id; if (mine) atBottom = true; else if (!atBottom) { newCount++; $('cx-down').hidden = false; $('cx-new').textContent = newCount; } render(); if (atBottom) scheduleRead(); typers.delete(ev.row.user_id); typingBar(); }
     else if (ev.type === 'message_updated') { const i = msgs.findIndex(m => m.id === ev.row.id); if (i >= 0) { msgs[i] = { ...msgs[i], ...ev.row }; render(); } }
     else if (ev.type === 'message_deleted') { msgs = msgs.filter(m => m.id !== ev.id); render(); }
@@ -109,31 +131,53 @@ export async function mountChat(el, { ctx, rooms, initialRoom, directOpen }) {
     else if (ev.type === 'presence') { online = ev.users; header(); }
     else if (ev.type === 'typing') { const u = ev.user; if (u.on) typers.set(u.id, { user: u, until: Date.now() + 4000 }); else typers.delete(u.id); typingBar(); }
   }
-  async function open(r) {
-    room = r; be?.close(); msgs = []; reacts = []; reads = new Map(); online = []; typers.clear(); replyTo = null; editing = null; unreadFrom = null; newCount = 0; atBottom = true; closeMenu();
+  function focusMsg(id) { const t = log.querySelector(`.cm[data-id="${CSS.escape(id)}"]`); if (!t) return false; t.scrollIntoView({ block: 'center' }); t.classList.add('flash'); setTimeout(() => t.classList.remove('flash'), 1600); return true; }
+  async function open(r, focus) {
+    windowed = false; $('cx-find').hidden = true; $('cx-fq').value = ''; $('cx-fhits').innerHTML = ''; room = r; be?.close(); msgs = []; reacts = []; reads = new Map(); online = []; typers.clear(); replyTo = null; editing = null; unreadFrom = null; newCount = 0; atBottom = true; closeMenu();
     setReply(null); header(); log.innerHTML = '<div class="loading"><span class="spinner"></span> Loading messages…</div>'; $('cx-online').textContent = 'Connecting…'; typingBar(); drawRooms();
     const u = new URL(location); u.searchParams.set('room', r); history.replaceState(history.state, '', u);
     if ($('cx-text')) $('cx-text').placeholder = `Message ${roomName()}`;
     try {
       be = await createChat({ room: r, user, onEvent });
-      const h = await be.history(); msgs = h.messages; reacts = h.reactions; h.reads.forEach(x => reads.set(x.user_id, x));
+      const h = await be.history(focus); msgs = h.messages; reacts = h.reactions; h.reads.forEach(x => reads.set(x.user_id, x));
       const mine = user && reads.get(user.id); if (mine) { const first = msgs.find(m => new Date(m.created_at) > new Date(mine.last_read_at) && m.user_id !== user.id); unreadFrom = first ? first.id : null; }
+      if (focus && msgs.some(m => m.id === focus.id)) { windowed = !!h.windowed; unreadFrom = null; render(); header(); atBottom = false; focusMsg(focus.id); $('cx-down').hidden = !windowed && near(); if (!windowed) scheduleRead(); return; }
       render(); header(); log.scrollTop = unreadFrom ? Math.max(0, (log.querySelector('.cx-unread')?.offsetTop || 0) - 60) : log.scrollHeight; atBottom = !unreadFrom; scheduleRead();
     } catch (e) { log.innerHTML = `<div class="empty"><h3>Could not load the room</h3><p>${esc(e.message)}</p></div>`; }
   }
-  function showChat(r) { root.dataset.view = 'chat'; if (mobile()) { document.body.classList.add('chat-open'); history.pushState({ chat: r }, ''); } open(r); }
+  function showChat(r, focus) { root.dataset.view = 'chat'; if (mobile()) { document.body.classList.add('chat-open'); history.pushState({ chat: r }, ''); } open(r, focus); }
   function showList() { root.dataset.view = 'list'; document.body.classList.remove('chat-open'); closeMenu(); }
   addEventListener('popstate', () => { if (root.dataset.view === 'chat' && mobile()) showList(); });
   // never leave the page locked: if the list is showing (or the page comes back from the cache), the chat's scroll lock must be off
   const unlock = () => { if (root.dataset.view !== 'chat' || !mobile()) document.body.classList.remove('chat-open'); };
   addEventListener('pageshow', unlock); addEventListener('resize', unlock); document.addEventListener('visibilitychange', unlock); unlock();
   $('cx-back').addEventListener('click', () => { if (history.state?.chat) history.back(); else showList(); });
-  $('rl-list').addEventListener('click', e => { const b = e.target.closest('[data-room]'); if (b) showChat(b.dataset.room); });
-  $('rl-q').addEventListener('input', drawRooms);
+  $('rl-list').addEventListener('click', e => {
+    const h = e.target.closest('[data-hit]'); if (h) return showChat(h.dataset.hroom, { id: h.dataset.hit, at: h.dataset.at });
+    const b = e.target.closest('[data-room]'); if (b) showChat(b.dataset.room);
+  });
+  $('rl-q').addEventListener('input', queueSearch);
+  $('rl-q').addEventListener('keydown', e => { if (e.key === 'Escape') { e.target.value = ''; queueSearch(); } });
+  el.querySelector('.rl-filters').addEventListener('click', e => { const b = e.target.closest('[data-sf]'); if (!b) return; sf = b.dataset.sf; el.querySelectorAll('.rl-filters .sf').forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); }); queueSearch(); });
   $('cx-stack').addEventListener('click', () => { const p = $('cx-people'); p.hidden = !p.hidden; $('cx-stack').setAttribute('aria-expanded', String(!p.hidden)); });
   $('cx-pin').addEventListener('click', () => { const t = log.querySelector(`.cm[data-id="${CSS.escape($('cx-pin').dataset.id)}"]`); if (t) { t.scrollIntoView({ block: 'center', behavior: 'smooth' }); t.classList.add('flash'); setTimeout(() => t.classList.remove('flash'), 1400); } });
   log.addEventListener('scroll', () => { atBottom = near(); if (atBottom) { newCount = 0; $('cx-down').hidden = true; scheduleRead(); } else if (log.scrollHeight - log.scrollTop - log.clientHeight > 220) $('cx-down').hidden = false; }, { passive: true });
-  $('cx-down').addEventListener('click', () => log.scrollTo({ top: log.scrollHeight, behavior: 'smooth' }));
+  // ---------- search inside the open room ----------
+  const fp = $('cx-find'), fq = $('cx-fq'), fh = $('cx-fhits'); let fT = 0, fSeq = 0;
+  function findOpen(on) { fp.hidden = !on; $('cx-find-btn').setAttribute('aria-expanded', on); if (on) { fp.style.top = el.querySelector('.cx-head').offsetHeight + 'px'; fq.focus(); fq.select(); } else { fq.blur(); } }
+  function findRun() {
+    clearTimeout(fT); const q = fq.value.trim(); if (q.length < 2) { fh.innerHTML = q ? '<li class="rl-note">Type at least 2 letters.</li>' : ''; fSeq++; return; }
+    fh.innerHTML = '<li class="rl-note"><span class="spinner"></span> Searching…</li>'; const my = ++fSeq;
+    fT = setTimeout(async () => { try { const r = await searchChat({ q, room }); if (my !== fSeq) return;
+      fh.innerHTML = r.length ? r.map(h => `<li><button type="button" class="rl-hit" data-fhit="${esc(h.id)}" data-at="${esc(h.created_at)}"><span class="rl-main"><b>${esc(h.user_id === user?.id ? 'You' : h.author_name)} <time>${short(h.created_at)}</time></b><small>${h.image_path && !h.body ? '📷 Photo' : highlight(snippet(h.body, q, 110), q)}</small></span></button></li>`).join('') : '<li class="rl-note">No messages found in this room.</li>';
+    } catch (e) { if (my === fSeq) fh.innerHTML = `<li class="rl-note">${esc(e.message)}</li>`; } }, 260);
+  }
+  $('cx-find-btn').addEventListener('click', () => findOpen(fp.hidden));
+  $('cx-fx').addEventListener('click', () => findOpen(false));
+  fq.addEventListener('input', findRun);
+  fq.addEventListener('keydown', e => { if (e.key === 'Escape') findOpen(false); });
+  fh.addEventListener('click', async e => { const b = e.target.closest('[data-fhit]'); if (!b) return; findOpen(false); if (!focusMsg(b.dataset.fhit)) await open(room, { id: b.dataset.fhit, at: b.dataset.at }); });
+  $('cx-down').addEventListener('click', () => { if (windowed) { open(room); return; } log.scrollTo({ top: log.scrollHeight, behavior: 'smooth' }); });
 
   // ---------- message actions ----------
   const find = id => msgs.find(m => m.id === id);
@@ -189,6 +233,7 @@ export async function mountChat(el, { ctx, rooms, initialRoom, directOpen }) {
   function setAtt(file) { pendingImg = file; const a = $('cx-att'); a.hidden = !file; a.innerHTML = file ? `<div class="att"><img src="${URL.createObjectURL(file)}" alt="Photo to send"><button type="button" aria-label="Remove photo" data-noatt>×</button></div>` : ''; }
   async function send() {
     const ta = $('cx-text'), body = ta.value.trim(); if (!body && !pendingImg) return;
+    if (windowed) await open(room);   // sending from an old search result: go back to the newest messages first
     if (editing) { try { await be.edit(editing, body); } catch (err) { toast(err.message); } editing = null; setBar(''); ta.value = ''; grow(); return; }
     const file = pendingImg, reply = replyTo, temp = { id: 'tmp-' + Math.random().toString(36).slice(2), room, user_id: user.id, author_name: user.name, author_avatar: user.avatar, author_role: user.role, body, reply_to: reply, image_path: file ? URL.createObjectURL(file) : null, created_at: new Date().toISOString(), state: 'sending', _file: file };
     msgs.push(temp); atBottom = true; ta.value = ''; grow(); setReply(null); setAtt(null); render(); be.typing(false); await commit(temp);
