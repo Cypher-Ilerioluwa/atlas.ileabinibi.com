@@ -17,7 +17,7 @@ Designed and developed by Cypher Ilerioluwa. Portfolio: https://cypherilerioluwa
 | Place, article and event data | **Demonstration only** until you publish real records |
 | Kọ́jọ́dá calendar (page, converter, festivals) | Built from the original app's rules and tested against its code; see docs/CALENDAR_VERIFICATION.md |
 | Chat (replies, reactions, read receipts, typing, online users), credits and contributor pages, ileabinibi.com import, app-style mobile layout | Built; live behaviour needs Supabase and the new SQL files |
-| SQL (13 SQL files incl. 0010 media, 0011 house author, 0012 push for new content), push function | Written, **never run**. Follow docs/GO_LIVE.md; 0006_selfcheck.sql reports what is missing |
+| SQL (14 SQL files incl. 0010 media, 0011 house author, 0012 push for new content, 0013 chat search), push function | Written, **never run**. Follow docs/GO_LIVE.md; 0006_selfcheck.sql reports what is missing |
 | Static pages per community/article for SEO, duplicate merge, event reminders, email notifications | Not built |
 
 **Start here: `docs/GO_LIVE.md`** (Supabase, Netlify, domain, admin, push).

@@ -50,7 +50,7 @@ If a folder is missing, click **Add file > Upload files** and drag just that fol
 
 ### D1. Run the database files, in order
 
-> **Already ran some files?** Run only the ones you have not run yet, in number order. If you ran 0001 to 0009 before this update, run just **0010**, **0011** and **0012** now, then `0006_selfcheck.sql` again.
+> **Already ran some files?** Run only the ones you have not run yet, in number order. If you ran 0001 to 0009 before this update, run just **0010**, **0011**, **0012** and **0013** now, then `0006_selfcheck.sql` again.
 
 Use **Supabase > SQL Editor > New query** for every file. For each file: in GitHub open `supabase` > `migrations` > the file, click the **Copy raw file** icon (two squares, top right), paste into a new Supabase query, press **Run**, and wait for "Success" before the next one. Do not run two files in the same query tab.
 
@@ -65,7 +65,8 @@ Use **Supabase > SQL Editor > New query** for every file. For each file: in GitH
 9. `0010_media.sql` (shared music and playlists, including sharing to the **General** community). Safe to run again, **and you must run it again if you ran an older copy**: it now lets a song be shared with General. **If the Media page says "Could not find the table 'public.media_shares' in the schema cache", this file has not been run yet: run it now.** It ends by refreshing Supabase's API cache, so no restart is needed
 10. `0011_house_author.sql` (makes **Ilẹ̀ Abínibí** the author of all content, linking to https://ileabinibi.com/). Safe to run again
 11. `0012_push_new_content.sql` (push notification to everyone for every new chat message, shared song and new article, event or record). **Do Part V first**, because this file needs the secret from it. Safe to run again
-12. `0006_selfcheck.sql` last: it changes nothing and shows OK or MISSING for each part
+12. `0013_chat_search.sql` (search inside chat messages, ignoring accents). Safe to run again
+13. `0006_selfcheck.sql` last: it changes nothing and shows OK or MISSING for each part
 
 **If a file fails**
 1. Do not run the later files. Scroll the result panel and copy the **red error message in full** (it names the line). Send it to me; one error message is all I need.
@@ -430,6 +431,15 @@ Good to know:
 - A very large audience (thousands of devices) can take several seconds per message. If that happens, tell the developer; the sending can be moved to a queue.
 - Web Push has no delivery guarantee: a phone in battery saver may receive it late.
 - If nothing arrives: check the Netlify function log for `notify-new`, check `net._http_response` in Supabase for the call's result (`select * from net._http_response order by created desc limit 5;`), and confirm the secret matches in both places.
+
+## Part W. Searching the chat
+
+- **Whole chat:** in Community > Discussion room, type 2 or more letters in the search box. Rooms with that name appear first, then **messages** from every room with the words highlighted. Tap a message to open its room at that message.
+- **Filters:** *Photos* lists every photo message; *Links and music* lists messages with a web link or a shared song. They work with or without words typed.
+- **One room:** open a room and tap the magnifier in its header to search only that conversation.
+- Capital letters and accents are ignored ("ibadan" finds "Ìbàdàn", "olojo" finds "Ọlọ́jọ́"). The sender's name is searched too.
+- If it says "Message search is not switched on yet", run `0013_chat_search.sql` in Supabase.
+- Searching reads about the newest 100 matches. For very large histories (hundreds of thousands of messages) tell the developer so an index can be added.
 
 ## Part P. Not built yet
 
