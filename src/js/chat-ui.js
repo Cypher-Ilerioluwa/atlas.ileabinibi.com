@@ -1,6 +1,7 @@
 // Messenger-style community chat: room list, rich messages, photos, replies, reactions, mentions, edit, pin, read receipts.
 import { createChat, createLobby, searchChat } from './chat-backend.js';
 import { highlight, snippet, fold } from './chat-search.js';
+import { reportContent, REASONS } from './report.js';
 import { esc } from './search.js';
 import { avatarHtml } from './content.js';
 import { toast } from './shell.js';
@@ -185,13 +186,17 @@ export async function mountChat(el, { ctx, rooms, initialRoom, directOpen }) {
   function closeMenu() { $('mm').hidden = $('mm-back').hidden = true; }
   function openMenu(id) {
     const m = find(id); if (!m || m.state) return; const mine = user && m.user_id === user.id, mm = $('mm');
-    mm.innerHTML = `${can ? `<div class="mm-emojis">${QUICK.map(e => `<button data-mr="${e}" aria-label="React ${e}">${e}</button>`).join('')}</div>` : ''}<div class="mm-list">${can ? '<button data-ma="reply">↩ Reply</button>' : ''}${m.body ? '<button data-ma="copy">⧉ Copy text</button>' : ''}${mine && m.body ? '<button data-ma="edit">✎ Edit</button>' : ''}${ctx.isEditor ? `<button data-ma="pin">📌 ${m.pinned ? 'Unpin' : 'Pin to the top'}</button>` : ''}${mine || ctx.isEditor ? '<button data-ma="del" class="danger">🗑 Delete</button>' : ''}</div>`;
+    mm.innerHTML = `${can ? `<div class="mm-emojis">${QUICK.map(e => `<button data-mr="${e}" aria-label="React ${e}">${e}</button>`).join('')}</div>` : ''}<div class="mm-list">${can ? '<button data-ma="reply">↩ Reply</button>' : ''}${m.body ? '<button data-ma="copy">⧉ Copy text</button>' : ''}${mine && m.body ? '<button data-ma="edit">✎ Edit</button>' : ''}${ctx.isEditor ? `<button data-ma="pin">📌 ${m.pinned ? 'Unpin' : 'Pin to the top'}</button>` : ''}${mine || ctx.isEditor ? '<button data-ma="del" class="danger">🗑 Delete</button>' : ''}${!mine ? '<button data-ma="report">⚑ Report</button>' : ''}</div>`;
     mm.dataset.id = id; mm.hidden = $('mm-back').hidden = false;
   }
   $('mm-back').addEventListener('click', closeMenu);
   $('mm').addEventListener('click', async e => {
     const id = $('mm').dataset.id, m = find(id); const em = e.target.closest('[data-mr]'); if (em) { closeMenu(); return react(id, em.dataset.mr); }
-    const a = e.target.closest('[data-ma]')?.dataset.ma; if (!a) return; closeMenu();
+    const rr = e.target.closest('[data-rr]')?.dataset.rr;
+    if (rr) { closeMenu(); try { await reportContent({ kind: 'chat_message', id, user, reason: rr, summary: `room ${room} · ${m?.author_name || 'member'}: "${snippet(m?.body || (m?.image_path ? 'photo' : ''), '', 90)}" (message ${id})` }); toast('Thank you. The team will review this message.', 5000); } catch (err) { toast(err.message); } return; }
+    const a = e.target.closest('[data-ma]')?.dataset.ma; if (!a) return;
+    if (a === 'report') { $('mm').innerHTML = `<div class="mm-list"><p class="mm-title">Why are you reporting this?</p>${Object.entries(REASONS).map(([k, v]) => `<button data-rr="${k}">${v}</button>`).join('')}<button data-ma="cancel">Cancel</button></div>`; return; }
+    closeMenu(); if (a === 'cancel') return;
     if (a === 'reply') setReply(id);
     if (a === 'copy') { try { await navigator.clipboard.writeText(m.body); toast('Copied.'); } catch { toast('Could not copy.'); } }
     if (a === 'edit') { editing = id; setReply(null); const ta = $('cx-text'); ta.value = m.body; ta.focus(); setBar(`<div><b>Editing message</b><span>${esc(m.body.slice(0, 100))}</span></div><button type="button" aria-label="Cancel" data-cancel>×</button>`); }

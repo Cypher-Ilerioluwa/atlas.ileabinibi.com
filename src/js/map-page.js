@@ -1,3 +1,4 @@
+import { dataSaverOn } from './datasaver.js';
 import { loadCommunities } from './api.js';
 import { matches, esc } from './search.js';
 import { toast } from './shell.js';
@@ -70,6 +71,10 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-open
 
 const loadScript = (src, integrity) => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; if (integrity) { s.integrity = integrity; s.crossOrigin = ''; } s.onload = res; s.onerror = () => rej(new Error('load failed')); document.head.append(s); });
 async function initMap() {
+  if (dataSaverOn()) {   // data saver: the map (about 1 to 2 MB) loads only when asked for
+    $('map').innerHTML = '<div class="map-gate"><p><b>Data saver is on.</b> The map is not loaded automatically because it uses data.</p><button class="btn" type="button" id="load-map">Load the map</button><p class="muted small">The list of communities below works without it.</p></div>';
+    await new Promise(res => document.getElementById('load-map').addEventListener('click', res, { once: true })); $('map').innerHTML = '';
+  }
   try {
     await loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=');
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js');

@@ -7,18 +7,26 @@ import { setCrumbs, fmtDate, fmtDateTime } from './core.js';
 import { toast } from './shell.js';
 import * as K from './calendar/kojoda.js';
 import { config } from './config.js';
+import { buildIcs, googleCalUrl, downloadFile } from './ics.js';
+import { rsvpState, setRsvp } from './rsvp.js';
+import { sharePicture } from './share-card.js';
 
 const $ = id => document.getElementById(id), q = new URLSearchParams(location.search);
 const type = TYPES[q.get('t')] ? q.get('t') : 'article', slug = q.get('s');
 const EV = { documented: 'Documented', oral_tradition: 'Oral tradition', scholarly_interpretation: 'Scholarly interpretation', disputed: 'Disputed account', community_submitted: 'Community submitted', under_review: 'Under review' };
-let user = null, eng = { likes: 0, liked: false, saved: false, comments: [] }, ctx = {}, itemId = null;
+let user = null, eng = { likes: 0, liked: false, saved: false, comments: [] }, ctx = {}, itemId = null, cur = null, rsvp = { off: true };
+const shareUrl = () => (type === 'article' ? `${config.siteUrl.replace(/\/$/, '')}/p/${encodeURIComponent(slug)}/` : location.href);   // articles are shared through their preview page so chat apps show a proper card
+const calArgs = () => ({ uid: itemId, title: cur.name || cur.title, start: cur.date_start, end: cur.date_end, location: cur.location_text, description: String(cur.summary || '').slice(0, 300), url: shareUrl() });
 const need = () => { toast('Sign in to do that.'); setTimeout(() => { location.href = '/account/?next=' + encodeURIComponent(location.pathname + location.search); }, 900); };
 
 function bar() {
   return `<div class="actbar" id="actbar"><button type="button" data-like class="${eng.liked ? 'on' : ''}" aria-pressed="${eng.liked}"><span>${eng.liked ? '♥' : '♡'}</span> <b>${eng.likes}</b><i class="vh"> likes</i></button>
     <a href="#comments" class="btn-like"><span>💬</span> <b>${eng.comments.length}</b><i class="vh"> comments</i></a>
     <button type="button" data-save class="${eng.saved ? 'on' : ''}" aria-pressed="${eng.saved}"><span>${eng.saved ? '★' : '☆'}</span> <i>${eng.saved ? 'Saved' : 'Save'}</i></button>
-    <button type="button" data-share><span>↗</span> <i>Share</i></button></div>`;
+    <button type="button" data-share><span>↗</span> <i>Share</i></button>
+    <button type="button" data-pic><span>🖼</span> <i>As picture</i></button>
+    ${type === 'event' && !rsvp.off ? `<button type="button" data-rsvp class="${rsvp.mine ? 'on' : ''}" aria-pressed="${!!rsvp.mine}"><span>${rsvp.mine ? '✓' : '＋'}</span> <i>${rsvp.mine ? 'Going' : "I'm going"}</i> <b>${rsvp.going}</b></button>` : ''}
+    ${type === 'event' && cur?.date_start ? `<button type="button" data-ics><span>📅</span> <i>Add to calendar</i></button><a class="btn-like" href="${esc(googleCalUrl(calArgs()))}" target="_blank" rel="noopener"><span>🗓</span> <i>Google</i></a>` : ''}</div>`;
 }
 function comments() {
   const can = user && !ctx.banned;
@@ -31,7 +39,13 @@ function wire(item, title) {
   $('post').addEventListener('click', async e => {
     if (e.target.closest('[data-like]')) { if (!user) return need(); try { await toggleLike(type, itemId, user, eng.liked); eng.likes += eng.liked ? -1 : 1; eng.liked = !eng.liked; refreshBar(); } catch (err) { toast(err.message); } }
     if (e.target.closest('[data-save]')) { if (!user) return need(); try { await toggleSave(type, itemId, user, eng.saved); eng.saved = !eng.saved; refreshBar(); toast(eng.saved ? 'Saved to your dashboard.' : 'Removed from saved.'); } catch (err) { toast(err.message); } }
-    if (e.target.closest('[data-share]')) { const url = type === 'article' ? `${config.siteUrl.replace(/\/$/, '')}/p/${encodeURIComponent(slug)}/` : location.href, data = { title, text: title, url }; try { if (navigator.share) await navigator.share(data); else { await navigator.clipboard.writeText(url); toast('Link copied.'); } } catch { /* cancelled */ } }   // articles are shared through their preview page so WhatsApp, X and Facebook show a proper card
+    if (e.target.closest('[data-share]')) { const url = shareUrl(), data = { title, text: title, url }; try { if (navigator.share) await navigator.share(data); else { await navigator.clipboard.writeText(url); toast('Link copied.'); } } catch { /* cancelled */ } }   // articles are shared through their preview page so WhatsApp, X and Facebook show a proper card
+    if (e.target.closest('[data-rsvp]')) { if (!user) return need(); try { await setRsvp(itemId, user, !rsvp.mine); rsvp.going += rsvp.mine ? -1 : 1; rsvp.mine = !rsvp.mine; refreshBar(); toast(rsvp.mine ? "You're going. See you there!" : 'RSVP removed.'); } catch (err) { toast(err.message); } }
+    if (e.target.closest('[data-ics]')) { downloadFile(`${slug}.ics`, buildIcs(calArgs())); toast('Calendar file downloaded. Open it to add the event.'); }
+    if (e.target.closest('[data-pic]')) {
+      const kicker = type === 'article' ? (TOPIC_LABEL[item.topic] || 'Article') : type === 'event' ? 'Event' : type.replace(/_/g, ' '), when = type === 'event' && item.date_start ? [fmtDate(item.date_start) + (item.date_end ? ' – ' + fmtDate(item.date_end) : ''), item.location_text].filter(Boolean).join(' · ') : '';
+      try { const r = await sharePicture({ kicker, title, body: [when, item.summary || String(item.body || '').slice(0, 420)].filter(Boolean).join('\n') }, `${slug}.png`, { title, text: title, url: shareUrl() }); if (r === 'downloaded') toast('Picture saved. Share it from your gallery.'); } catch (err) { toast(err.message); }
+    }
     const del = e.target.closest('[data-delc]'); if (del && confirm('Delete this comment?')) { const id = del.closest('.comment').dataset.id; try { await deleteComment(id); eng.comments = eng.comments.filter(c => c.id !== id); refreshComments(); } catch (err) { toast(err.message); } }
   });
   $('post').addEventListener('input', e => { if (e.target.id === 'ctext') $('ccount').textContent = e.target.value.length + ' / 1000'; });
@@ -58,6 +72,7 @@ const refreshComments = () => { $('comments').outerHTML = comments(); };
     if (type === 'heritage_record') meta = [item.category && item.category.replace(/_/g, ' '), item.period_text, item.language];
     { const upd = item.updated_at || item.last_reviewed_at, was = item.published_at; if (upd && fmtDate(upd) && fmtDate(upd) !== fmtDate(was) && meta.length) meta.push(`${item.updated_at ? 'Updated' : 'Reviewed'} ${fmtDate(upd)}`); }
     eng = await loadEngagement(type, itemId, user?.id).catch(() => eng);
+    cur = item; if (type === 'event') rsvp = await rsvpState(itemId, user?.id);
     const bodyHtml = item.body_html ? sanitize(item.body_html) : `<p>${esc(text).replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>')}</p>`;
     $('post').innerHTML = `<div class="eyebrow">${esc(T.label)}${item.evidence ? ` · <span class="badge ${esc(item.evidence)}">${esc(EV[item.evidence] || item.evidence)}</span>` : ''}</div>
       <h1>${esc(title)}</h1>

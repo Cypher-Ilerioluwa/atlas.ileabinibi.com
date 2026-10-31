@@ -60,3 +60,27 @@ body:has(.stage-dock.is-pip) .to-top,body.chat-open .to-top{display:none}
   .hero .sun{translate:none}
   .btn-gold::before,.btn .ripple{display:none}.tabbar [aria-current=page] svg{animation:none}.to-top{transition:opacity .2s}
 }
+
+/* ===== Yorùbá letter strip ===== */
+.yk{position:fixed;z-index:90;display:flex;align-items:center;gap:.25rem;padding:.3rem .4rem;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 30px rgba(40,20,10,.25);animation:yk-in .18s var(--ease) both}
+.yk[hidden]{display:none}
+@keyframes yk-in{from{opacity:0;transform:translateY(6px)}}
+.yk-row{display:flex;gap:.25rem;overflow-x:auto;flex:1;min-width:0;scrollbar-width:none;-webkit-overflow-scrolling:touch}.yk-row::-webkit-scrollbar{display:none}
+.yk button{flex:none;min-width:40px;height:40px;padding:0 .5rem;border:1px solid var(--line);border-radius:10px;background:var(--surface-sunk);color:var(--ink);font:inherit;font-size:1.15rem;font-weight:600;cursor:pointer;touch-action:manipulation}
+.yk button:active{background:var(--brand-gold);transform:scale(.94)}
+.yk .yk-x{flex:none;min-width:36px;border:0;background:none;font-size:.95rem;color:var(--ink-soft)}
+@media (pointer:coarse){.yk{border-radius:0;border-width:1px 0 0;box-shadow:0 -6px 18px rgba(40,20,10,.15);padding-bottom:max(.3rem,env(safe-area-inset-bottom,0px))}}
+
+/* ===== Data saver ===== */
+.ds-toggle{border:1px solid color-mix(in srgb,var(--brand-gold) 60%,transparent);background:none;color:var(--brand-gold);font:inherit;font-size:.78rem;font-weight:700;padding:.15rem .7rem;border-radius:999px;cursor:pointer;white-space:nowrap}
+.ds-toggle[aria-pressed=true]{background:var(--brand-gold);color:var(--brand-earth)}
+html[data-saver="1"] *,html[data-saver="1"] *::before,html[data-saver="1"] *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+html[data-saver="1"] .reveal{opacity:1;transform:none}
+html[data-saver="1"] .hero .sun,html[data-saver="1"] .cover{display:none}
+html[data-saver="1"] .cm-track{width:auto;overflow-x:auto}html[data-saver="1"] .cm-set[aria-hidden=true]{display:none}html[data-saver="1"] .cm-strip{overflow-x:auto;-webkit-mask-image:none;mask-image:none}
+.map-gate{display:grid;place-content:center;justify-items:center;gap:.8rem;min-height:320px;padding:var(--space-5);text-align:center;background:var(--surface-sunk);border-radius:var(--radius-m)}.map-gate p{margin:0;max-width:34ch}
+
+/* ===== chat report menu, event buttons ===== */
+.mm-title{margin:0;padding:.6rem 1rem .3rem;font-weight:800;font-size:.85rem;color:var(--ink-soft)}
+.actbar{border-radius:26px}.actbar [data-rsvp].on{color:var(--accent-ink)}
+.actbar i{font-style:normal}

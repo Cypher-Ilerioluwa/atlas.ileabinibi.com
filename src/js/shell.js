@@ -2,6 +2,8 @@
 import { labelAccountLink } from './core.js';
 import './ui.js';
 import './motion.js';
+import './datasaver.js';
+import './yoruba-keys.js';
 import { startNotifications } from './notify.js';
 (window.requestIdleCallback ? window.requestIdleCallback(() => startNotifications()) : setTimeout(startNotifications, 800));
 labelAccountLink();
