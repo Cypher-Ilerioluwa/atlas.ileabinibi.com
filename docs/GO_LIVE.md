@@ -50,7 +50,7 @@ If a folder is missing, click **Add file > Upload files** and drag just that fol
 
 ### D1. Run the database files, in order
 
-> **Already ran some files?** Run only the ones you have not run yet, in number order. If you ran 0001 to 0009 before this update, run just **0010** to **0014** now, then `0006_selfcheck.sql` again.
+> **Already ran some files?** Run only the ones you have not run yet, in number order. If you ran 0001 to 0009 before this update, run just **0010** to **0015** now, then `0006_selfcheck.sql` again.
 
 Use **Supabase > SQL Editor > New query** for every file. For each file: in GitHub open `supabase` > `migrations` > the file, click the **Copy raw file** icon (two squares, top right), paste into a new Supabase query, press **Run**, and wait for "Success" before the next one. Do not run two files in the same query tab.
 
@@ -67,7 +67,8 @@ Use **Supabase > SQL Editor > New query** for every file. For each file: in GitH
 11. `0012_push_new_content.sql` (push notification to everyone for every new chat message, shared song and new article, event or record). **Do Part V first**, because this file needs the secret from it. Safe to run again
 12. `0013_chat_search.sql` (search inside chat messages, ignoring accents). Safe to run again
 13. `0014_public_updated_at.sql` (shows "Updated <date>" on articles and events). Safe to run again
-14. `0006_selfcheck.sql` last: it changes nothing and shows OK or MISSING for each part
+14. `0015_event_rsvps.sql` ("I'm going" on events). Safe to run again
+15. `0006_selfcheck.sql` last: it changes nothing and shows OK or MISSING for each part
 
 **If a file fails**
 1. Do not run the later files. Scroll the result panel and copy the **red error message in full** (it names the line). Send it to me; one error message is all I need.
@@ -449,6 +450,15 @@ Good to know:
 - **Share image.** `src/assets/img/og-default.png` (1200 x 630) is used when a page has no picture of its own. Replace it with your own design if you like, keeping that size.
 - **Titles and descriptions** are kept under 62 and 160 characters (a test checks this).
 - **Legal pages.** `/privacy/`, `/terms/` and `/contact/` are linked from every footer. They are written as plain-language drafts that match what the Atlas does today. **Have a lawyer review them before launch**, and set `contactEmail` in `src/js/config.js` so the Contact page shows an email address.
+
+## Part Y. Everyday tools for members
+
+- **Yorùbá letter strip.** Tapping a search box, a chat box or a comment box on a phone shows a strip with ẹ ọ ṣ (and capitals) and every tone-marked vowel. Tapping a letter types it where the cursor is. The ✕ hides it for that visit. On computers it appears for writing boxes only.
+- **Events.** Event pages have **Add to calendar** (a standard .ics file that Apple, Google and Outlook open), a **Google** calendar link and **I'm going** with a count (members only; only the number is public). The calendar buttons appear for events that have a date. RSVP needs `0015_event_rsvps.sql`; until it is run the button is simply hidden.
+- **Share as picture.** Every post and event has an **As picture** button that makes a branded card (title, short text, logo, address). On a phone it opens the share sheet (WhatsApp, Instagram and so on); on a computer it downloads the PNG.
+- **Data saver.** A footer button turns off animation and decorative pictures, and the map waits for a tap before loading. It switches on by itself when the phone's own data-saver setting is on.
+- **Report a message.** Press and hold (or right-click) a chat message from someone else and choose **Report**, then a reason. Reports arrive in **Admin > Corrections** (type `chat_message`, with the room, the sender, the words and the message id), where you can set them to in review, resolved or declined. Moderators delete the message from the same menu in the chat.
+- **Not built yet:** spoken pronunciations (they need real recordings), event reminders, and saving individual records for offline use.
 
 ## Part P. Not built yet
 
